@@ -185,6 +185,6 @@ describe("contract failures surface as errors, never as an empty verdict", () =>
   });
 
   it("asks exactly the fifteen questions of the spec", () => {
-    expect(QUESTION_IDS).toHaveLength(15);
+    expect(QUESTION_IDS).toHaveLength(17);
   });
 });

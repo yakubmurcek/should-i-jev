@@ -142,6 +142,8 @@ const VETO_FLIP: Record<VetoId, string> = {
 };
 
 const LABELS: Record<string, string> = {
+  labelled_outcomes_exist: "Labelled history already exists",
+  needs_external_lookup: "Needs data fetched from elsewhere",
   needs_generation: "Has to write new text",
   needs_arithmetic: "Has to count or calculate",
   needs_temporal_reasoning: "Has to reason about dates",
@@ -410,7 +412,20 @@ export function composeVerdict(
         "the output is written text, and there is no separate judgment in front of it worth typing";
       flip = `What would change this: ${VETO_FLIP.needs_generation}`;
     }
-  } else if (depthLevel <= 1 && bandNoul(volume.noul) === "fires") {
+  } else if (shapeChoice === "free_prose") {
+    // Weighting cannot rescue this: Jev-1.13 does not return prose at all, so
+    // depth, volume and latency have nothing to add up to. Reached when the
+    // output is prose but `needs_generation` did not fire.
+    kind = "use_an_llm";
+    why = "the output is written prose, and a typed judgment has no way to return prose";
+    flip =
+      "What would change this: the output. If the prose can be chosen from prepared options rather than written fresh, this becomes a typed judgment.";
+  } else if (
+    depthLevel <= 1 &&
+    bandNoul(volume.noul) === "fires" &&
+    bandNoul(require_(answers, "labelled_outcomes_exist", isNoul).noul) === "fires"
+  ) {
+    consume(ctx, "labelled_outcomes_exist", "yes", 0.5);
     kind = "classical_ml";
     why =
       "the volume is there but the language is not: matching wording is all this needs, and labelled examples will beat a language judgment at that";
@@ -437,6 +452,14 @@ export function composeVerdict(
   // --- Step 4. Consequence adjustment. It does not change the verdict; it
   // raises the bar required to state it.
   if (consequenceFires) consume(ctx, "high_consequence", "yes", 0.5);
+
+  // Needing a lookup is an architecture note, never a veto: code fetches the
+  // evidence, then the model judges what was fetched.
+  const lookup = answers.needs_external_lookup;
+  if (isNoul(lookup) && bandNoul(lookup.noul) === "fires" && kind !== "just_write_code") {
+    flip +=
+      " Note: this needs data fetched from elsewhere. Fetch it in code and pass the result in state — retrieval is code's job, and the judgment is a separate step afterwards.";
+  }
 
   if (carriedCaveats.includes("untrusted_input") && kind !== "just_write_code") {
     why += ". The text it judges is public, and Jev does not treat its state as hostile — keep the decision reversible and visible, because someone will write text aimed at steering it";

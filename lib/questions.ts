@@ -145,12 +145,19 @@ export const QUESTIONS: Record<string, Question> = {
         "Numbers may appear in the input, but the answer turns on meaning or category rather than on numeric magnitude or proximity.",
     },
   },
+  // Narrowed from "several dependent steps, a plan, OR tool use". TypeSafe's
+  // Noul page is explicit that compound questions should be split and combined
+  // in code, and measurement showed why: bundled, this scored 0.75 on a plain
+  // country-code lookup and vetoed it to "use an LLM". Split, the same case is
+  // dependent-steps 0.22 (correctly no) and external-lookup 0.94 (correctly
+  // yes). Needing a lookup is not a reasoning weakness — see
+  // `needs_external_lookup` below.
   needs_multihop_reasoning: {
     type: "noul",
     instructions:
-      "Does reaching the answer require several dependent reasoning steps, a plan, or calling out to tools or external data along the way?",
+      "Does reaching the answer require working through intermediate conclusions in a fixed order, where a later step cannot be taken until an earlier one is settled?",
     criteria: {
-      true: "The answer cannot be read off the input directly: it requires working through intermediate conclusions in order, or fetching something else first.",
+      true: "The answer depends on a chain: something must be established first, and only then does the next part become answerable.",
       false:
         "The answer can be judged directly from the input in one step, even if that judgment needs real understanding of the language.",
     },
@@ -180,6 +187,38 @@ export const QUESTIONS: Record<string, Question> = {
       true: "A programmer could write the decision out as explicit conditions, a table of known values, or a pattern to match, and it would be right.",
       false:
         "Any explicit rule would miss cases, because the decision depends on what the wording means rather than on the exact values present.",
+    },
+  },
+
+  // ---- Architecture note, not a veto.
+  // Needing to fetch evidence does not disqualify Jev: the documented shape is
+  // that code retrieves, then the model judges what was retrieved. So this
+  // answer never blocks a verdict; it changes the advice the card gives.
+  needs_external_lookup: {
+    type: "noul",
+    instructions:
+      "Does reaching the answer require fetching data that is not in the input — calling a tool, querying a system, or looking something up elsewhere?",
+    criteria: {
+      true: "Everything needed to decide is not present in the text itself; something must be retrieved from outside it first.",
+      false: "Everything needed to decide is present in the input as given.",
+    },
+  },
+
+  // §5.4 defines classical ML as "high volume, labelled outcomes, no language
+  // understanding needed". The composite was testing volume and depth and
+  // ASSUMING the labels. Measured consequence: refund-intent detection came
+  // back at depth level 1 and was routed to classical ML — but recognising that
+  // "money back", "chargeback" and "cancel and refund me" mean the same thing
+  // is what Jev is for, and a team with no labelled history cannot train
+  // anything. Without labels the honest answer is a typed judgment.
+  labelled_outcomes_exist: {
+    type: "noul",
+    instructions:
+      "Does the team already have a large history of past examples of this decision WITH the correct answer recorded for each — enough to train a model on?",
+    criteria: {
+      true: "The decision has been made many times already and each past answer was recorded, so the history could be used as training data today.",
+      false:
+        "There is no recorded history of correct answers: the decision is new, made ad hoc, or its outcomes were never captured in a usable form.",
     },
   },
 

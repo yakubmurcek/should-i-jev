@@ -245,6 +245,7 @@ export const FIXTURES: Fixture[] = [
     answers: withAnswers({
       semantic_depth: score("semantic_depth", 1, 0.91),
       repeated_at_volume: noul(0.98),
+      labelled_outcomes_exist: noul(0.93),
       deterministic_rule_exists: noul(0.25),
     }),
   },
@@ -303,18 +304,16 @@ export const FIXTURES: Fixture[] = [
       "Sort incoming tickets into whichever of our categories fits, however many of those there turn out to be.",
     expect: "not_enough_to_judge",
     proves: "a consumed answer below the 0.6 floor withholds the verdict and names the dimension",
-    alsoExpect: { decidingIncludes: "semantic_depth" },
-    // Mass sits at BOTH ends of the scale — exact-match at one end and expert
-    // judgment at the other. That is not a score landing between neighbouring
-    // levels, it is the model not knowing, and the two readings resolve to
-    // different verdicts, so the verdict is withheld.
+    // The output shape is split between a fixed set of labels and written
+    // prose. Those resolve to different verdicts — a typed judgment or an LLM —
+    // so the uncertainty is material and the verdict is withheld.
+    alsoExpect: { decidingIncludes: "output_shape" },
     answers: withAnswers({
-      semantic_depth: {
-        type: "score",
-        score: 3,
-        legend: {},
-        probabilities: { "0": 0.35, "1": 0.1, "2": 0.15, "3": 0.4 },
-        confidence: 0.4,
+      output_shape: {
+        type: "choice",
+        choice: "closed_set",
+        probabilities: { closed_set: 0.45, free_prose: 0.4, structured_record: 0.15 },
+        confidence: 0.45,
       },
     }),
   },

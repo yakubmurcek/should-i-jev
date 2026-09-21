@@ -106,7 +106,41 @@ verdict only if resolving it either way would actually change it. Without that,
 `latency_sensitive` — the smallest weight there is, and near 0.5 on most real
 descriptions — withheld verdicts its own resolution could not have altered.
 
-After the fixes: **14 of 28**. The remaining gap is not the system disagreeing with
+After the fixes: **14 of 28**.
+
+### Audited against TypeSafe's own docs
+
+Read against `concepts/state`, `primitives/noul`, `confidence`, `patterns/fan-out`
+and the `parallel_questions` cookbook. What the audit changed:
+
+- **Batching is already right.** The cookbook measures one batched call at
+  **12.2x cheaper and 10.0x faster** than sequential ones with no change in
+  answers. We send one request per subject carrying every question.
+- **Cost is the question set, not the state.** Measured: 2,806 input tokens per
+  request, of which the state is ~90. Noul `criteria` are 687 of those tokens —
+  the docs say to try questions with and without them, so we did: without, answers
+  move *toward* 0.5 (`deterministic_rule_exists` 0.15 -> 0.23). Bands are what the
+  code consumes, so sharper answers mean fewer withheld verdicts. Criteria stay.
+- **A compound Noul was breaking the obvious cases.** The Noul page says to split
+  compound questions and combine in code. `needs_multihop_reasoning` bundled
+  "dependent steps OR a plan OR tool use" and scored **0.75 on a country-code
+  lookup**, vetoing it to "use an LLM". Split, the same case is dependent-steps
+  0.22 and external-lookup 0.94 — and needing a lookup is not a reasoning
+  weakness, so it is now an architecture note, never a veto. **This single fix
+  moved agreement from 14/28 to 19/28.**
+- **Backticked state paths: measured, no effect.** The docs recommend referencing
+  nested state with backticked paths. With one obvious text field, adding them
+  changed 1 band in 35, so they are not used.
+- **Classical ML was being selected without the thing that defines it.** §5.4
+  calls it "high volume, labelled outcomes, no language understanding" — the
+  composite tested volume and depth and assumed the labels. `labelled_outcomes_exist`
+  is now asked, and required.
+- **Prose output can no longer be outvoted.** Weighting could previously reach
+  "Jev fits" on a prose output if depth and volume were high enough. Jev does not
+  return prose at all, so no weighting rescues it.
+
+Seventeen questions, 2,872 input tokens per request (+2.4% for the two added
+questions), one request per verdict, cached by content hash. The remaining gap is not the system disagreeing with
 itself; it is fixture descriptions that trip vetoes I did not intend (an insurance
 example that says "incident date" fires `needs_temporal_reasoning` at 0.91) plus
 threshold tuning against real answers, which is open question 4 in the spec. Those
