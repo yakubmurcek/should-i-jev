@@ -166,6 +166,24 @@ example that says "incident date" fires `needs_temporal_reasoning` at 0.91) plus
 threshold tuning against real answers, which is open question 4 in the spec. Those
 are the next session's work, and `scripts/compare-recorded.ts` is how to see them.
 
+## When TypeSafe is busy
+
+`529 system_overloaded` is TypeSafe under load. It is a wait, not a failed
+verdict, and the app treats it as one:
+
+- The client retries six times on a full-jitter curve up to 8s a step, roughly
+  17s of budget, and honours `Retry-After` when the server sets one. Full jitter
+  because every client retrying on the same curve is how an overloaded service
+  stays overloaded.
+- The route maps it to `code: "busy"` and a plain sentence. **The upstream
+  response body never reaches the browser**; it goes to the server log.
+- The page keeps your description, says Jev is busy, and retries on its own with
+  a visible countdown, backing off 5s, 10s, 20s, 40s, with a "Try again now"
+  button throughout.
+
+Set `JEV_ENDPOINT` at a local stub that always returns 529 to see that path
+without waiting for a real outage.
+
 ## Accepted risks
 
 **Prompt injection.** The state box is public and Jev does not treat its state as

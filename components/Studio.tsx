@@ -17,7 +17,9 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
   const [text, setText] = useState(initial?.description ?? "");
   const [phase, setPhase] = useState<Phase>(initial ? "done" : "idle");
   const [record, setRecord] = useState<VerdictRecord | null>(initial ?? null);
-  const [error, setError] = useState<{ message: string; detail?: string } | null>(null);
+  const [error, setError] = useState<{ code?: string; message: string; detail?: string } | null>(null);
+  const [retryIn, setRetryIn] = useState<number | null>(null);
+  const attemptRef = useRef(0);
   const [copied, setCopied] = useState(false);
   const boxRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -26,10 +28,34 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
   const tooShort = text.trim().length < MIN_DESCRIPTION_CHARS;
   const over = text.length > MAX_DESCRIPTION_CHARS;
 
+  /**
+   * A busy upstream is not a failed verdict, it is a wait. TypeSafe returns 529
+   * under load; the server already spends a jittered retry budget on it, and if
+   * that is not enough the page waits and goes again on its own rather than
+   * making the visitor wonder whether their description survived.
+   */
+  function scheduleRetry(description: string) {
+    const seconds = Math.min(5 * 2 ** attemptRef.current, 40);
+    attemptRef.current += 1;
+    setRetryIn(seconds);
+    const tick = setInterval(() => {
+      setRetryIn((n) => {
+        if (n === null) return null;
+        if (n <= 1) {
+          clearInterval(tick);
+          run(description);
+          return null;
+        }
+        return n - 1;
+      });
+    }, 1000);
+  }
+
   async function run(description = text) {
     if (description.trim().length < MIN_DESCRIPTION_CHARS || description.length > MAX_DESCRIPTION_CHARS) return;
     setPhase("running");
     setError(null);
+    setRetryIn(null);
     setRecord(null);
     requestAnimationFrame(() =>
       resultRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }),
@@ -43,16 +69,19 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError({ message: data.error ?? "Something went wrong.", detail: data.detail });
+        setError({ code: data.code, message: data.error ?? "Something went wrong.", detail: data.detail });
         setPhase("error");
+        if (data.code === "busy" && attemptRef.current < 4) scheduleRetry(description);
         return;
       }
+      attemptRef.current = 0;
       setRecord(data as VerdictRecord);
       setPhase("done");
       window.history.replaceState(null, "", `/v/${data.id}`);
     } catch {
-      setError({ message: "Could not reach the server. Nothing was judged." });
+      setError({ code: "busy", message: "Could not reach the server." , detail: "Your description is safe, nothing was judged." });
       setPhase("error");
+      if (attemptRef.current < 4) scheduleRetry(description);
     }
   }
 
@@ -145,10 +174,36 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               initial={reduce ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="rounded-2xl border border-[rgb(255_122_156/0.35)] bg-[var(--bg-lift)] p-5"
+              className="flex flex-col gap-4 rounded-2xl border bg-[var(--bg-lift)] p-5 sm:p-6"
+              style={{
+                borderColor:
+                  error.code === "busy" ? "rgb(255 180 84 / 0.35)" : "rgb(255 122 156 / 0.35)",
+              }}
             >
-              <p className="text-[var(--text)]">{error.message}</p>
-              {error.detail && <p className="mt-2 text-sm text-[var(--dim)]">{error.detail}</p>}
+              <div className="flex flex-col gap-1.5">
+                <p className="text-lg text-[var(--text)]">{error.message}</p>
+                {error.detail && <p className="text-sm text-[var(--dim)]">{error.detail}</p>}
+              </div>
+
+              {error.code === "busy" && (
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRetryIn(null);
+                      run();
+                    }}
+                    className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-ink)] transition hover:brightness-110 active:scale-[0.98]"
+                  >
+                    Try again now
+                  </button>
+                  {retryIn !== null && (
+                    <span className="font-[family-name:var(--font-mono)] text-[13px] text-[var(--faint)]">
+                      retrying in {retryIn}s
+                    </span>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 
