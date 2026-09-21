@@ -1,0 +1,269 @@
+import type { Question } from "@/lib/jev/types";
+
+/**
+ * The fifteen questions of spec §4, sent as ONE request over ONE subject.
+ * They are evaluated in parallel and cannot see one another, so none of them
+ * may depend on another's answer. Code composes the verdict (lib/compose.ts).
+ *
+ * There is deliberately no broad "which mechanism should power this?" question:
+ * broad phrasing invites overconfidence and hides the signals code weighs
+ * separately.
+ */
+
+export const VETO_IDS = [
+  "needs_generation",
+  "needs_arithmetic",
+  "needs_temporal_reasoning",
+  "needs_numeric_comparison",
+  "needs_multihop_reasoning",
+  "untrusted_input",
+  "deterministic_rule_exists",
+] as const;
+
+export type VetoId = (typeof VETO_IDS)[number];
+
+export const OUTPUT_SHAPES = [
+  "closed_set",
+  "free_prose",
+  "degree_or_number",
+  "structured_record",
+  "action_with_parameters",
+  "unclear",
+] as const;
+
+export type OutputShape = (typeof OUTPUT_SHAPES)[number];
+
+/**
+ * Supplied to the two speculative questions as structured criteria. Jev cannot
+ * be assumed to know TypeSafe's own API from its weights — never rely on model
+ * weights for information the code already possesses.
+ */
+export const PRIMITIVE_DEFINITIONS = {
+  choice: {
+    covers: "Selecting exactly one option from a set the code defines up front.",
+    not_for: "Open-ended output, or questions where several options are true at once.",
+    example: "Route a support email to one of nine queues.",
+  },
+  noul: {
+    covers:
+      "A single condition that either holds or does not, answered as a calibrated probability that it holds.",
+    not_for: "Questions with more than two outcomes, or questions of degree.",
+    example: "Is this message asking for a refund?",
+  },
+  score: {
+    covers:
+      "Placing something on an ordered scale whose levels the code defines, each level describing a concrete situation.",
+    not_for: "Unordered categories, or arithmetic over numbers in the state.",
+    example: "How severe is this bug report, from cosmetic to data loss?",
+  },
+  combination: {
+    covers:
+      "Several of the above asked together about the same subject in one request, each answering a narrow judgment the code handles separately.",
+    not_for: "A single narrow judgment that one primitive already covers.",
+    example: "A Choice for the category plus a Noul for whether the text is a complaint.",
+  },
+  none_fits: {
+    covers:
+      "The work described does not reduce to typed judgments over one subject at all.",
+    not_for: "Cases that merely need the option set rewriting.",
+    example: "Rendering a chart, or transcribing audio.",
+  },
+} as const;
+
+export const PATTERN_DEFINITIONS = {
+  speculative_fan_out: {
+    covers:
+      "Asking many questions about one subject in a single request, including ones whose premise may prove irrelevant, and letting code discard the answers it does not need.",
+    not_for: "Packing several independent subjects into one request.",
+    example:
+      "Asking about category, urgency and refund intent at once, then using urgency only when the category is billing.",
+  },
+  confidence_gated_routing: {
+    covers:
+      "Using the answer to decide what, and the confidence to decide whether to act, with a higher bar for consequential outcomes.",
+    not_for: "Cases where every outcome carries the same consequence and one bar suffices.",
+    example: "Auto-applying a category above 0.85 and queueing it for a human below.",
+  },
+  composite_scoring: {
+    covers:
+      "Combining several Score answers into one number, with the weights kept in code so they can be retuned without new inference.",
+    not_for: "A single judgment that one question already answers.",
+    example: "Blending severity, reach and effort into one triage priority.",
+  },
+  intent_routing: {
+    covers: "Classifying what the user is trying to do, then dispatching to a handler for it.",
+    not_for: "Judgments that do not select a downstream code path.",
+    example: "Deciding whether a chat message is a booking, a cancellation or a question.",
+  },
+  none_fits: {
+    covers: "None of TypeSafe's four documented patterns describes the shape of this work.",
+    not_for: "Cases that match a pattern under a different name.",
+    example: "A one-off manual review performed by a person.",
+  },
+} as const;
+
+export const QUESTIONS: Record<string, Question> = {
+  // ---- §4.1 Vetoes. Each maps to a documented Jev weakness or to an
+  // "ordinary code is enough" condition, and each independently disqualifies Jev.
+  needs_generation: {
+    type: "noul",
+    instructions:
+      "Does the described feature have to produce new natural-language text as its own output, rather than judge, classify or select existing text?",
+    criteria: {
+      true: "The feature's output is itself written language that did not exist before: a reply, a summary, a description, a rewritten passage, a generated message.",
+      false:
+        "The feature's output is a decision about existing text or data: a label, a flag, a rank, a score, a selected option, or a record of fields copied from the input.",
+    },
+  },
+  needs_arithmetic: {
+    type: "noul",
+    instructions:
+      "Does the described feature require counting items, tallying values, or doing arithmetic over a collection in order to reach its answer?",
+    criteria: {
+      true: "Reaching the answer means counting how many things there are, summing or averaging values, or otherwise computing a number from a collection.",
+      false:
+        "The answer depends on what the content means or which category it belongs to, not on any count or calculation.",
+    },
+  },
+  needs_temporal_reasoning: {
+    type: "noul",
+    instructions:
+      "Does the described feature require comparing dates or times, computing a duration, or checking whether something falls inside a time window?",
+    criteria: {
+      true: "Reaching the answer means putting dates in order, measuring how long something took, or deciding whether a moment falls before, after or within a period.",
+      false:
+        "Dates may appear in the input, but the answer does not depend on ordering them, measuring between them, or bounding them.",
+    },
+  },
+  needs_numeric_comparison: {
+    type: "noul",
+    instructions:
+      "Does the described feature require judging the magnitude of numbers, or how close two numeric values are to each other?",
+    criteria: {
+      true: "Reaching the answer means deciding that a value is large, small, near another value, or over a threshold expressed as a number.",
+      false:
+        "Numbers may appear in the input, but the answer turns on meaning or category rather than on numeric magnitude or proximity.",
+    },
+  },
+  needs_multihop_reasoning: {
+    type: "noul",
+    instructions:
+      "Does reaching the answer require several dependent reasoning steps, a plan, or calling out to tools or external data along the way?",
+    criteria: {
+      true: "The answer cannot be read off the input directly: it requires working through intermediate conclusions in order, or fetching something else first.",
+      false:
+        "The answer can be judged directly from the input in one step, even if that judgment needs real understanding of the language.",
+    },
+  },
+  untrusted_input: {
+    type: "noul",
+    instructions:
+      "Does the text that this feature will judge come from a public or adversarial source, where someone could deliberately write text intended to steer the decision?",
+    criteria: {
+      true: "The judged text is written by members of the public, anonymous users, or anyone with a motive to influence the outcome in their favour.",
+      false:
+        "The judged text comes from the operator's own systems, staff, or trusted partners, where nobody gains by manipulating the decision.",
+    },
+  },
+  deterministic_rule_exists: {
+    type: "noul",
+    instructions:
+      "Could an exact rule, lookup table, or pattern match decide this correctly, without any understanding of language?",
+    criteria: {
+      true: "A programmer could write the decision out as explicit conditions, a table of known values, or a pattern to match, and it would be right.",
+      false:
+        "Any explicit rule would miss cases, because the decision depends on what the wording means rather than on the exact values present.",
+    },
+  },
+
+  // ---- §4.2 Shape and weight.
+  output_shape: {
+    type: "choice",
+    instructions:
+      "What shape does the feature's own output take, as the description presents it?",
+    criteria: {
+      closed_set:
+        "One option chosen from a set of possibilities that is known ahead of time and does not change per request.",
+      free_prose: "Written natural language composed for a reader.",
+      degree_or_number:
+        "A position on a scale, a rating, a rank or a likelihood, rather than a named category.",
+      structured_record:
+        "A set of named fields filled in from the input, such as extracted details or a populated form.",
+      action_with_parameters:
+        "A decision to perform some operation, together with the values that operation needs.",
+      unclear:
+        "The description does not say what the feature outputs, so none of the above can be selected from it.",
+    },
+  },
+  repeated_at_volume: {
+    type: "noul",
+    instructions:
+      "Is this judgment made repeatedly across many items, rather than once or only occasionally?",
+    criteria: {
+      true: "The same judgment runs over a stream or backlog of many items: every message, every row, every upload.",
+      false:
+        "The judgment happens rarely: once per project, on demand for a single case, or at a human's initiative.",
+    },
+  },
+  latency_sensitive: {
+    type: "noul",
+    instructions:
+      "Does this judgment sit in a path where a person or system is waiting on the answer right now?",
+    criteria: {
+      true: "The answer is needed while someone waits: during a page load, mid-conversation, or inside a request that must return quickly.",
+      false:
+        "The answer can be produced in the background, in a batch, or on a schedule, with nobody blocked on it.",
+    },
+  },
+  high_consequence: {
+    type: "noul",
+    instructions:
+      "Would a wrong answer here cause material harm — losing money, endangering someone, creating legal exposure, or taking an action that cannot be undone?",
+    criteria: {
+      true: "A mistake costs money, affects someone's safety or rights, creates legal exposure, or performs an irreversible action such as deleting, publishing or paying.",
+      false:
+        "A mistake is an inconvenience that a person can notice and correct, with nothing lost but a little time.",
+    },
+  },
+  semantic_depth: {
+    type: "score",
+    instructions:
+      "How much understanding of language does deciding this correctly actually require?",
+    criteria: [
+      "Matching exact values decides it: the input contains specific known strings, codes or identifiers, and finding one settles the answer.",
+      "Recognising wording decides it: the same thing is said in different words, with synonyms, abbreviations or misspellings, but no interpretation is needed beyond recognising it.",
+      "Reading in context decides it: the same words mean different things depending on the surrounding text, so what the writer is getting at must be taken into account.",
+      "Domain judgment decides it: someone who knows the field would weigh competing considerations, and two informed people could reasonably disagree on borderline cases.",
+    ],
+  },
+
+  // ---- §4.3 Gate.
+  description_specificity: {
+    type: "score",
+    instructions:
+      "How concretely does the description pin down what goes in, what comes out, and the decision being made in between?",
+    criteria: [
+      "It names a subject area only: a product, an industry or a general ambition, with no particular decision identified.",
+      "It names a decision but leaves both sides open: the reader can tell what kind of judgment is wanted, but not what data it sees or what it returns.",
+      "It states either the input or the output concretely, but not both: one end of the decision is pinned down and the other is left to be guessed.",
+      "It states the input, the shape of the output, and the rule or basis on which the decision is made, so a programmer could begin without asking a question.",
+    ],
+  },
+
+  // ---- §4.4 Speculative payload. Consumed only when Jev survives the vetoes,
+  // and discarded otherwise; that discarding is the documented fan-out behaviour.
+  primitive_fit: {
+    type: "choice",
+    instructions:
+      "Assuming this feature were built with TypeSafe's Jev, which of these typed primitives would carry the judgment? Each option is defined below in full; judge only against those definitions.",
+    criteria: PRIMITIVE_DEFINITIONS,
+  },
+  pattern_fit: {
+    type: "choice",
+    instructions:
+      "Assuming this feature were built with TypeSafe's Jev, which of these documented integration patterns would its shape follow? Each option is defined below in full; judge only against those definitions.",
+    criteria: PATTERN_DEFINITIONS,
+  },
+};
+
+export const QUESTION_IDS = Object.keys(QUESTIONS);

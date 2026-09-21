@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0b0d;
+  --bg-raised: #111318;
+  --bg-inset: #0d0f13;
+  --border: #22262e;
+  --border-soft: #1a1d23;
+  --text: #e6e8eb;
+  --text-dim: #9aa1ab;
+  --text-faint: #5f6670;
+  --accent: #5eead4;
+  --accent-dim: #1a3a35;
+
+  /* verdict kinds — distinguishable but sober, not neon */
+  --v-just-write-code: #8b93a1;
+  --v-jev-fits: #5eead4;
+  --v-use-an-llm: #c9a86a;
+  --v-jev-plus-llm: #7aa8d8;
+  --v-classical-ml: #b18ad0;
+  --v-not-enough: #d17d7d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+::selection {
+  background: var(--accent-dim);
+  color: var(--text);
+}
+
+textarea, input, button {
+  font-family: inherit;
+}
+
+a {
+  color: var(--accent);
+}
+
+/* details/summary chevron */
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details[open] summary .chevron {
+  transform: rotate(90deg);
+}
+.chevron {
+  display: inline-block;
+  transition: transform 120ms ease;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
