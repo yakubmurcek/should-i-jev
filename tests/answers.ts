@@ -19,13 +19,16 @@ export const choice = (
 export const score = (questionId: string, level: number, confidence: number): Answer => {
   const q = QUESTIONS[questionId] as ScoreQuestion;
   const legend = Object.fromEntries(q.criteria.map((text, i) => [String(i), text]));
-  return {
-    type: "score",
-    score: level,
-    legend,
-    probabilities: { [String(Math.round(level))]: confidence },
-    confidence,
-  };
+  // A real Score answer spreads its remaining mass over neighbouring levels.
+  // Emitting a single key would leave the materiality probe in lib/compose.ts
+  // with no alternative level to explore.
+  const lvl = Math.round(level);
+  const neighbours = [lvl - 1, lvl + 1].filter((i) => i >= 0 && i < q.criteria.length);
+  const each = neighbours.length ? (1 - confidence) / neighbours.length : 0;
+  const probabilities: Record<string, number> = { [String(lvl)]: confidence };
+  for (const n of neighbours) probabilities[String(n)] = each;
+
+  return { type: "score", score: level, legend, probabilities, confidence };
 };
 
 /**

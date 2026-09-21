@@ -41,7 +41,11 @@ describe("golden fixtures", () => {
     expect(compose().kind).toBe("jev_fits");
 
     for (const veto of VETO_IDS) {
-      const v = compose(withAnswers({ [veto]: noul(0.93) }));
+      // `untrusted_input` is conditional: it blocks only when a wrong answer
+      // costs something material (see CONDITIONAL_VETOES in lib/compose.ts).
+      const extra: Record<string, ReturnType<typeof noul>> =
+        veto === "untrusted_input" ? { high_consequence: noul(0.9) } : {};
+      const v = compose(withAnswers({ [veto]: noul(0.93), ...extra }));
       expect(v.kind, `${veto} did not override a strong Jev-fit score`).not.toBe("jev_fits");
       expect(v.deciding.map((d) => d.id)).toContain(veto);
     }
@@ -72,6 +76,33 @@ describe("the card is honest about what it does not know", () => {
     for (const f of FIXTURES) {
       expect(compose(f.answers).whatWouldChangeThis.length).toBeGreaterThan(10);
     }
+  });
+});
+
+describe("untrusted input is weighed by what being steered would cost", () => {
+  it("blocks when a wrong answer costs something material", () => {
+    const v = compose(withAnswers({ untrusted_input: noul(0.93), high_consequence: noul(0.9) }));
+    expect(v.kind).toBe("just_write_code");
+  });
+
+  it("rides along as a caveat when the decision is reversible", () => {
+    const v = compose(withAnswers({ untrusted_input: noul(0.93), high_consequence: noul(0.08) }));
+    expect(v.kind).toBe("jev_fits");
+    expect(v.why).toContain("does not treat its state as hostile");
+  });
+});
+
+describe("the floor only withholds on uncertainty that could change the verdict", () => {
+  it("ignores a weak answer whose resolution cannot alter the outcome", () => {
+    // latency_sensitive carries the smallest weight there is (0.10) and lands
+    // near 0.5 on most real descriptions.
+    const v = compose(withAnswers({ latency_sensitive: noul(0.5) }));
+    expect(v.kind).toBe("jev_fits");
+  });
+
+  it("still withholds when resolving the weak answer would change the verdict", () => {
+    const v = compose(withAnswers({ deterministic_rule_exists: noul(0.5) }));
+    expect(v.kind).toBe("not_enough_to_judge");
   });
 });
 

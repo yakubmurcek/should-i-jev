@@ -157,8 +157,15 @@ export const QUESTIONS: Record<string, Question> = {
   },
   untrusted_input: {
     type: "noul",
+    // The first wording of this question scored 0.94-0.97 on all 27 fixtures —
+    // it fired even on a country-code lookup. Measured cause: the model was
+    // reading it against the state's own "untrusted third-party input" label
+    // and answering about the DESCRIPTION's provenance. Naming the feature's
+    // runtime explicitly, and telling it to disregard the description's own
+    // origin, moved a lookup from 0.94 to 0.24 while a public vendor-application
+    // form stayed at 0.89. Literal reading: it answers the question you wrote.
     instructions:
-      "Does the text that this feature will judge come from a public or adversarial source, where someone could deliberately write text intended to steer the decision?",
+      "Ignore where this description itself came from. At the time the described feature RUNS in production, will the data it reads be written by members of the public, or by anyone with a motive to influence its decision?",
     criteria: {
       true: "The judged text is written by members of the public, anonymous users, or anyone with a motive to influence the outcome in their favour.",
       false:
@@ -229,11 +236,12 @@ export const QUESTIONS: Record<string, Question> = {
     type: "score",
     instructions:
       "How much understanding of language does deciding this correctly actually require?",
+    // Levels describe concrete, non-overlapping situations and stand alone.
     criteria: [
-      "Matching exact values decides it: the input contains specific known strings, codes or identifiers, and finding one settles the answer.",
-      "Recognising wording decides it: the same thing is said in different words, with synonyms, abbreviations or misspellings, but no interpretation is needed beyond recognising it.",
-      "Reading in context decides it: the same words mean different things depending on the surrounding text, so what the writer is getting at must be taken into account.",
-      "Domain judgment decides it: someone who knows the field would weigh competing considerations, and two informed people could reasonably disagree on borderline cases.",
+      "The input contains an exact value — a code, an ID, a fixed keyword — and finding that value settles the answer. A lookup table would be right every time.",
+      "The same thing arrives worded many different ways, with synonyms, abbreviations and typos. Recognising that two phrasings mean the same thing settles it; nothing else is needed.",
+      "The same words mean different things in different places, so the surrounding text decides which reading is correct.",
+      "Someone who knows the field weighs competing considerations, and two informed practitioners could reasonably disagree about a borderline case.",
     ],
   },
 
@@ -243,10 +251,10 @@ export const QUESTIONS: Record<string, Question> = {
     instructions:
       "How concretely does the description pin down what goes in, what comes out, and the decision being made in between?",
     criteria: [
-      "It names a subject area only: a product, an industry or a general ambition, with no particular decision identified.",
-      "It names a decision but leaves both sides open: the reader can tell what kind of judgment is wanted, but not what data it sees or what it returns.",
-      "It states either the input or the output concretely, but not both: one end of the decision is pinned down and the other is left to be guessed.",
-      "It states the input, the shape of the output, and the rule or basis on which the decision is made, so a programmer could begin without asking a question.",
+      "It names a subject area or an ambition — an industry, a product, a hope that AI might help — without identifying any particular decision.",
+      "It names a decision but says neither what data goes in nor what comes out.",
+      "It pins down one side only: either what goes in or what comes out, with the other side left to guess.",
+      "It states what goes in, what comes out, and the basis for the call, so a programmer could start without asking a question.",
     ],
   },
 

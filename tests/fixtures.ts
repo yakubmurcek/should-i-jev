@@ -104,13 +104,23 @@ export const FIXTURES: Fixture[] = [
     answers: vetoFires("needs_numeric_comparison"),
   },
   {
-    id: "veto-untrusted-input",
+    id: "veto-untrusted-input-when-consequential",
     description:
       "Read publicly submitted vendor applications and decide which ones get fast-tracked for approval.",
     expect: "just_write_code",
-    proves: "adversarial state disqualifies Jev — it does not treat its state as hostile",
+    proves:
+      "adversarial state disqualifies Jev when a wrong answer costs something material — it does not treat its state as hostile",
     alsoExpect: { decidingIncludes: "untrusted_input" },
-    answers: vetoFires("untrusted_input"),
+    answers: vetoFires("untrusted_input", { high_consequence: noul(0.9) }),
+  },
+  {
+    id: "untrusted-input-is-a-caveat-when-reversible",
+    description:
+      "Every inbound support email has to land in one of nine queues based on what the customer is asking for. An agent sees the queue and can move it.",
+    expect: "jev_fits",
+    proves:
+      "public text alone does not disqualify Jev — almost every real integration judges text somebody outside the company wrote, including TypeSafe's own canonical case. Steered into a reversible label is an annoyance; steered into a payout is the documented risk",
+    answers: withAnswers({ untrusted_input: noul(0.93), high_consequence: noul(0.08) }),
   },
   {
     id: "veto-multihop",
@@ -294,7 +304,19 @@ export const FIXTURES: Fixture[] = [
     expect: "not_enough_to_judge",
     proves: "a consumed answer below the 0.6 floor withholds the verdict and names the dimension",
     alsoExpect: { decidingIncludes: "semantic_depth" },
-    answers: withAnswers({ semantic_depth: score("semantic_depth", 2, 0.42) }),
+    // Mass sits at BOTH ends of the scale — exact-match at one end and expert
+    // judgment at the other. That is not a score landing between neighbouring
+    // levels, it is the model not knowing, and the two readings resolve to
+    // different verdicts, so the verdict is withheld.
+    answers: withAnswers({
+      semantic_depth: {
+        type: "score",
+        score: 3,
+        legend: {},
+        probabilities: { "0": 0.35, "1": 0.1, "2": 0.15, "3": 0.4 },
+        confidence: 0.4,
+      },
+    }),
   },
   {
     id: "floor-ignores-discarded-speculation",
@@ -328,7 +350,9 @@ export const FIXTURES: Fixture[] = [
     alsoExpect: { provisional: true },
     answers: withAnswers({
       high_consequence: noul(0.94),
-      semantic_depth: score("semantic_depth", 2, 0.72),
+      // Consumed at weight 0.2 and sitting in the confirm band (0.6-0.85),
+      // which is what makes a consequential verdict provisional.
+      repeated_at_volume: noul(0.75),
       untrusted_input: noul(0.2),
     }),
   },

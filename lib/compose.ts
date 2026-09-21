@@ -78,6 +78,26 @@ export const VETO_PRECEDENCE: VetoId[] = [
   "needs_generation",
 ];
 
+/**
+ * DEPARTURE FROM THE SPEC (§4.1), made on measured evidence.
+ *
+ * The spec lists `untrusted_input` as one of seven independent vetoes. Held
+ * that way it disqualifies almost every real Jev integration, because almost
+ * all of them judge text somebody outside the company wrote: across the
+ * recorded fixtures it fires at 0.88 on support-email routing, which is
+ * TypeSafe's own canonical use case. A veto that rules out the canonical case
+ * is encoding the weakness wrongly.
+ *
+ * What the jaggedness page actually says is that Jev "doesn't treat state as
+ * hostile" — injected instructions can steer the answer. The cost of being
+ * steered is what matters. Steered into a reversible label a human will see is
+ * an annoyance; steered into a payout, a deletion or a publication is the
+ * documented risk. So untrusted input disqualifies Jev when, and only when,
+ * `high_consequence` also fires. Otherwise it is carried onto the card as a
+ * caveat rather than silently deciding the verdict.
+ */
+export const CONDITIONAL_VETOES: VetoId[] = ["untrusted_input"];
+
 const VETO_VERDICT: Record<VetoId, VerdictKind> = {
   deterministic_rule_exists: "just_write_code",
   needs_arithmetic: "just_write_code",
@@ -171,6 +191,8 @@ const ASSUMPTION_DIMENSIONS: Record<string, string> = {
 type Ctx = {
   answers: Record<string, Answer>;
   deciding: DecidingJudgment[];
+  /** Would resolving `id` either way change the verdict? */
+  material: (id: string, kind: VerdictKind) => boolean;
 };
 
 function consume(ctx: Ctx, id: string, reading: string, weight: number): void {
@@ -212,11 +234,50 @@ function require_<T extends Answer>(
   return a;
 }
 
+/** Pins an uncertain answer to each definite reading it could resolve to. */
+function extremesOf(a: Answer): Answer[] {
+  if (a.type === "noul") return [{ ...a, noul: 0.95 }, { ...a, noul: 0.05 }];
+  if (a.type === "score") {
+    const levels = Object.keys(a.probabilities).map(Number).sort((x, y) => x - y);
+    const lo = levels[0] ?? 0;
+    const hi = levels[levels.length - 1] ?? lo;
+    return [lo, hi].map((lvl) => ({
+      ...a,
+      score: lvl,
+      confidence: 0.95,
+      probabilities: { [String(lvl)]: 0.95 },
+    }));
+  }
+  return Object.keys(a.probabilities).map((opt) => ({
+    ...a,
+    choice: opt,
+    confidence: 0.95,
+    probabilities: { [opt]: 0.95 },
+  }));
+}
+
 export function composeVerdict(
   answers: Record<string, Answer>,
   modelVersion: string,
+  /** Internal: set while probing, to stop the materiality check recursing. */
+  probing = false,
 ): Verdict {
-  const ctx: Ctx = { answers, deciding: [] };
+  const ctx: Ctx = { answers, deciding: [], material: () => true };
+
+  // Re-runs composition with one uncertain answer pinned to each extreme. The
+  // recursion terminates because the probe's answers are all definite, so no
+  // probe ever finds an answer below the floor to probe in turn.
+  if (!probing) {
+    ctx.material = (id, kind) => {
+      const a = answers[id];
+      if (!a) return false;
+      for (const pinned of extremesOf(a)) {
+        const probe = composeVerdict({ ...answers, [id]: pinned }, modelVersion, true);
+        if (probe.kind !== kind) return true;
+      }
+      return false;
+    };
+  }
 
   // --- Step 1. Specificity gate. Runs first and depends on nothing else.
   const specificity = require_(answers, "description_specificity", isScore);
@@ -248,7 +309,16 @@ export function composeVerdict(
     if (bandNoul(a.noul) === "fires") firing.push(id);
   }
 
-  const blocking = firing.filter((id) => id !== "needs_generation");
+  const consequence = require_(answers, "high_consequence", isNoul);
+  const consequenceFires = bandNoul(consequence.noul) === "fires";
+
+  const blocking = firing.filter((id) => {
+    if (id === "needs_generation") return false;
+    // A conditional veto only blocks when a wrong answer would cost something
+    // material; otherwise it rides along as a caveat.
+    if (CONDITIONAL_VETOES.includes(id)) return consequenceFires;
+    return true;
+  });
   if (blocking.length > 0) {
     const winner = blocking[0]!; // VETO_PRECEDENCE order is preserved
     consume(ctx, winner, "yes", 1);
@@ -262,6 +332,10 @@ export function composeVerdict(
       provisional: false,
     });
   }
+
+  const carriedCaveats = firing.filter(
+    (id) => CONDITIONAL_VETOES.includes(id) && !blocking.includes(id),
+  );
 
   // A veto sitting in the `uncertain` band is the case where we cannot say
   // whether Jev is disqualified at all. That is exactly a deciding answer below
@@ -362,9 +436,11 @@ export function composeVerdict(
 
   // --- Step 4. Consequence adjustment. It does not change the verdict; it
   // raises the bar required to state it.
-  const consequence = require_(answers, "high_consequence", isNoul);
-  const consequenceFires = bandNoul(consequence.noul) === "fires";
   if (consequenceFires) consume(ctx, "high_consequence", "yes", 0.5);
+
+  if (carriedCaveats.includes("untrusted_input") && kind !== "just_write_code") {
+    why += ". The text it judges is public, and Jev does not treat its state as hostile — keep the decision reversible and visible, because someone will write text aimed at steering it";
+  }
 
   return finish(ctx, {
     kind,
@@ -396,8 +472,14 @@ type Draft = {
 function finish(ctx: Ctx, draft: Draft): Verdict {
   const deciding = [...ctx.deciding].sort((a, b) => b.weight - a.weight);
 
+  // An answer below the floor only withholds the verdict if resolving it either
+  // way would CHANGE the verdict. Measured need: `latency_sensitive` lands near
+  // 0.5 on most descriptions, and it carries the smallest weight there is
+  // (0.10) — without this check it withholds verdicts its own resolution could
+  // not have altered, and "Not enough to judge" stops meaning anything.
   const belowFloor = deciding
     .filter((d) => d.certainty < FLOOR)
+    .filter((d) => ctx.material(d.id, draft.kind))
     .sort((a, b) => b.weight - a.weight)[0];
 
   if (belowFloor && draft.kind !== "not_enough_to_judge") {

@@ -75,11 +75,42 @@ npm run test:live # one real request, contract only. Needs TYPESAFE_API_KEY.
 in isolation against an otherwise strong Jev-fit score. Weights, bands and
 thresholds can be retuned and re-verified without spending a token.
 
-**The fixture answers in `tests/fixtures.ts` are hand-authored, not recorded** —
-this repository has never held a TypeSafe key. `npm run record:fixtures` replaces
-them with real answers for the same descriptions. Where a recorded answer
+**The fixture answers in `tests/fixtures.ts` are hand-authored, not recorded.**
+`npm run record:fixtures` fetches real answers for the same descriptions and
+`npx tsx scripts/compare-recorded.ts` diffs them. Where a recorded answer
 disagrees with the hand-authored one, that is a finding to examine, not a test to
 relax.
+
+### What the first recording found
+
+Run against live `jev-1.13.0`, the hand-authored expectations matched **6 of 27**.
+Three defects came out of that, all fixed here:
+
+1. **`untrusted_input` fired at 0.94 mean, range 0.79-0.97 — on everything**,
+   including a country-code lookup. Cause, isolated in a 2x2: the model was
+   reading the question against the state's own "untrusted third-party input"
+   label and answering about *the description's* provenance, not the feature's
+   runtime input. Naming the runtime explicitly moved the lookup to 0.24 while a
+   public vendor-application form held at 0.89. Literal reading, exactly as the
+   jaggedness page warns — and caused by our own security label.
+2. **`untrusted_input` as a standalone veto ruled out the canonical case.**
+   Support-email routing scores 0.88 there, because customers *are* the public.
+   It is now conditional on `high_consequence`: being steered into a reversible
+   label is an annoyance, being steered into a payout is the documented risk.
+3. **Score confidence was read like Choice confidence.** A depth of 2.2 spread
+   across levels 2 and 3 is "between these two" on an *ordered* scale, not
+   ignorance. Score certainty is now adjacent-level mass.
+
+A fourth fix came from the same data: an answer below the floor now withholds the
+verdict only if resolving it either way would actually change it. Without that,
+`latency_sensitive` — the smallest weight there is, and near 0.5 on most real
+descriptions — withheld verdicts its own resolution could not have altered.
+
+After the fixes: **14 of 28**. The remaining gap is not the system disagreeing with
+itself; it is fixture descriptions that trip vetoes I did not intend (an insurance
+example that says "incident date" fires `needs_temporal_reasoning` at 0.91) plus
+threshold tuning against real answers, which is open question 4 in the spec. Those
+are the next session's work, and `scripts/compare-recorded.ts` is how to see them.
 
 ## Accepted risks
 

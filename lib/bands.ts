@@ -37,9 +37,32 @@ export function noulCertainty(p: number): number {
   return Math.max(p, 1 - p);
 }
 
+/**
+ * A Score's levels are ORDERED; a Choice's options are not. Probability split
+ * between two NEIGHBOURING levels means "between these two" — that is
+ * precision, not ignorance — while mass two levels away is genuine confusion.
+ * So a Score's certainty is the mass within one level of where it landed.
+ *
+ * Measured: the canonical support-routing case returns semantic_depth 2.2 at
+ * confidence 0.46. Read as a Choice confidence that is below the floor and the
+ * verdict is withheld; read as an ordered scale it says "between reading in
+ * context and domain judgment", which is a clear answer for our purposes —
+ * both levels weigh the same way in the composite.
+ */
+export function scoreCertainty(answer: ScoreAnswer): number {
+  const level = scoreLevel(answer);
+  let mass = 0;
+  for (const [k, p] of Object.entries(answer.probabilities)) {
+    if (Math.abs(Number(k) - level) <= 1) mass += p;
+  }
+  // Fall back to the reported confidence if probabilities are absent.
+  return mass > 0 ? Math.min(1, mass) : answer.confidence;
+}
+
 /** The quantity the §5.3 floor applies to, per primitive type. */
 export function certaintyOf(answer: Answer): number {
   if (answer.type === "noul") return noulCertainty(answer.noul);
+  if (answer.type === "score") return scoreCertainty(answer);
   return answer.confidence;
 }
 
