@@ -46,6 +46,19 @@ export type Assumption = {
   assumed: string;
 };
 
+/**
+ * A missing half of the decision, offered to the visitor as something to fill
+ * in. Vague descriptions are the normal case, not an error: the tool's job is
+ * to show what it would need, not to refuse.
+ */
+export type Gap = {
+  key: "input" | "output" | "basis";
+  /** The question posed to the visitor. */
+  ask: string;
+  /** Tap-to-append starting points. */
+  chips: string[];
+};
+
 export type Verdict = {
   kind: VerdictKind;
   headline: string;
@@ -61,6 +74,10 @@ export type Verdict = {
   modelVersion: string;
   /** Composite Jev-fit score, present whenever composition reached step 3. */
   fitScore: number | null;
+  /** What the description left out, when that is why we cannot rule. */
+  gaps: Gap[];
+  /** 0-1, how pinned down the description is. Drives the sharpen meter. */
+  sharpness: number;
 };
 
 export type VerdictRecord = {

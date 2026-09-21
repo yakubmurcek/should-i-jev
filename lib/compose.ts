@@ -13,6 +13,7 @@ import {
 } from "@/lib/bands";
 import {
   VERDICT_HEADLINES,
+  type Gap,
   type Assumption,
   type DecidingJudgment,
   type Verdict,
@@ -124,7 +125,7 @@ const VETO_WHY: Record<VetoId, string> = {
   needs_multihop_reasoning:
     "the answer needs several dependent steps, and accuracy drops across hops",
   untrusted_input:
-    "the judged text is public, and Jev does not treat its state as hostile — instructions written into that text can steer the answer",
+    "the judged text is public, and Jev does not treat its state as hostile: instructions written into that text can steer the answer",
   needs_generation: "Jev-1.13 is not trained to generate text",
 };
 
@@ -134,7 +135,7 @@ const VETO_FLIP: Record<VetoId, string> = {
   needs_arithmetic:
     "moving the counting into code. If the model only has to judge what each item is and your code does the tallying, the veto lifts.",
   needs_temporal_reasoning:
-    "computing the dates in code first. Pass the model the conclusion — 'overdue', 'within the window' — instead of the raw dates.",
+    "computing the dates in code first. Pass the model the conclusion, 'overdue', 'within the window', instead of the raw dates.",
   needs_numeric_comparison:
     "comparing the numbers in code and passing the model the comparison's result in words.",
   needs_multihop_reasoning:
@@ -189,6 +190,59 @@ const ASSUMPTION_DIMENSIONS: Record<string, string> = {
   needs_numeric_comparison: "Whether it has to compare numbers",
   needs_multihop_reasoning: "Whether it takes several dependent steps",
 };
+
+/**
+ * A vague description is the normal case. Rather than refusing it, the card
+ * shows which half of the decision is missing and offers concrete starting
+ * points to fill in, so the visitor can sharpen and re-run.
+ */
+const GAP_SPECS: Record<Gap["key"], Omit<Gap, "key">> = {
+  input: {
+    ask: "What does it read?",
+    chips: [
+      "a support email",
+      "a product listing",
+      "a chat message",
+      "a call transcript",
+      "a form submission",
+      "a code diff",
+    ],
+  },
+  output: {
+    ask: "What comes back?",
+    chips: [
+      "one of a fixed set of labels",
+      "a yes or no",
+      "a score from 1 to 5",
+      "a filled-in record",
+      "an action plus its parameters",
+      "written text",
+    ],
+  },
+  basis: {
+    ask: "What decides it?",
+    chips: [
+      "what the writer is asking for",
+      "how urgent it sounds",
+      "which rule it breaks",
+      "whether it matches our policy",
+      "how severe it is",
+    ],
+  },
+};
+
+function gapsFrom(answers: Record<string, Answer>, specificityLevel: number): Gap[] {
+  const gaps: Gap[] = [];
+  const missing = (id: string) => {
+    const a = answers[id];
+    return isNoul(a) && bandNoul(a.noul) !== "fires";
+  };
+  if (missing("states_input")) gaps.push({ key: "input", ...GAP_SPECS.input });
+  if (missing("states_output")) gaps.push({ key: "output", ...GAP_SPECS.output });
+  // Level 3 is the only level that claims the basis is stated.
+  if (specificityLevel < 3) gaps.push({ key: "basis", ...GAP_SPECS.basis });
+  return gaps;
+}
 
 // ---------------------------------------------------------------------------
 // Composition
@@ -297,6 +351,7 @@ export function composeVerdict(
 
   if (specificityLevel <= 0) {
     return finish(ctx, {
+      specificityLevel,
       kind: "not_enough_to_judge",
       why: "the description names a subject area rather than a decision, so there is nothing specific enough to rule on",
       whatWouldChangeThis:
@@ -326,6 +381,7 @@ export function composeVerdict(
     consume(ctx, winner, "yes", 1);
     for (const other of blocking.slice(1)) consume(ctx, other, "yes", 0.5);
     return finish(ctx, {
+      specificityLevel,
       kind: VETO_VERDICT[winner],
       why: VETO_WHY[winner],
       whatWouldChangeThis: `What would change this: ${VETO_FLIP[winner]}`,
@@ -357,10 +413,11 @@ export function composeVerdict(
   if (shapeChoice === "unclear") {
     consume(ctx, "output_shape", OUTPUT_SHAPE_READING.unclear, 1);
     return finish(ctx, {
+      specificityLevel,
       kind: "not_enough_to_judge",
       why: "the description does not say what the feature returns, and the output shape is half of what decides this",
       whatWouldChangeThis:
-        "Name the output. A fixed set of labels, a number, a record of fields, or written prose — each one points somewhere different.",
+        "Name the output. A fixed set of labels, a number, a record of fields, or written prose, each one points somewhere different.",
       modelVersion,
       fitScore: null,
       provisional: false,
@@ -402,7 +459,7 @@ export function composeVerdict(
     if (shapeChoice !== "free_prose" && fitScore >= JEV_FIT_THRESHOLD) {
       kind = "jev_plus_llm";
       why =
-        "the output is written text, which Jev cannot produce — but the judgment in front of it is exactly the typed, repeated call Jev is for, so let Jev decide and gate, and let the LLM write";
+        "the output is written text, which Jev cannot produce, but the judgment in front of it is exactly the typed, repeated call Jev is for, so let Jev decide and gate, and let the LLM write";
       flip =
         "What would change this: whether the judgment in front of the writing is real. If there is nothing to decide before generating, it is an LLM call and nothing else.";
     } else {
@@ -443,7 +500,7 @@ export function composeVerdict(
   } else {
     kind = "just_write_code";
     why =
-      "neither the language depth nor the volume is there — this is a handful of conditions, and conditions belong in code";
+      "neither the language depth nor the volume is there, this is a handful of conditions, and conditions belong in code";
     flip =
       "What would change this: the wording. If the same thing arrives phrased a dozen ways, conditions stop covering it.";
   }
@@ -457,21 +514,22 @@ export function composeVerdict(
   const lookup = answers.needs_external_lookup;
   if (isNoul(lookup) && bandNoul(lookup.noul) === "fires" && kind !== "just_write_code") {
     flip +=
-      " Note: this needs data fetched from elsewhere. Fetch it in code and pass the result in state — retrieval is code's job, and the judgment is a separate step afterwards.";
+      " Note: this needs data fetched from elsewhere. Fetch it in code and pass the result in state, retrieval is code's job, and the judgment is a separate step afterwards.";
   }
 
   const injectable = carriedCaveats.includes("untrusted_input");
   if (injectable && kind !== "just_write_code") {
     why +=
-      ". The text it judges is public, and Jev does not treat its state as hostile — someone will write text aimed at steering it";
+      ". The text it judges is public, and Jev does not treat its state as hostile: someone will write text aimed at steering it";
     flip = consequenceFires
       ? "Do not let this act on its own. A wrong answer here costs something material and the text that produces it is written by people who benefit from a particular answer, so gate on confidence and put a person on the cases below the bar. " +
         flip
-      : "Keep the decision reversible and visible — a steered label a person can correct is an annoyance, a steered action is not. " +
+      : "Keep the decision reversible and visible, a steered label a person can correct is an annoyance, a steered action is not. " +
         flip;
   }
 
   return finish(ctx, {
+    specificityLevel,
     kind,
     why,
     whatWouldChangeThis: flip,
@@ -485,6 +543,7 @@ export function composeVerdict(
 
 type Draft = {
   kind: VerdictKind;
+  specificityLevel: number;
   why: string;
   whatWouldChangeThis: string;
   modelVersion: string;
@@ -502,6 +561,8 @@ type Draft = {
  */
 function finish(ctx: Ctx, draft: Draft): Verdict {
   const deciding = [...ctx.deciding].sort((a, b) => b.weight - a.weight);
+  const gaps = gapsFrom(ctx.answers, draft.specificityLevel);
+  const sharpness = Math.max(0, Math.min(1, draft.specificityLevel / 3));
 
   // An answer below the floor only withholds the verdict if resolving it either
   // way would CHANGE the verdict. Measured need: `latency_sensitive` lands near
@@ -524,6 +585,8 @@ function finish(ctx: Ctx, draft: Draft): Verdict {
       whatWouldChangeThis: `What would change this: say, in the description, ${belowFloor.label.toLowerCase()}.`,
       modelVersion: draft.modelVersion,
       fitScore: draft.fitScore,
+      gaps,
+      sharpness,
     };
   }
 
@@ -551,6 +614,8 @@ function finish(ctx: Ctx, draft: Draft): Verdict {
     whatWouldChangeThis: draft.whatWouldChangeThis,
     modelVersion: draft.modelVersion,
     fitScore: draft.fitScore,
+    gaps,
+    sharpness,
   };
 }
 
@@ -572,7 +637,7 @@ export function assumptionsFrom(ctx: Ctx): Assumption[] {
       const band = bandNoul(a.noul);
       assumed =
         band === "uncertain"
-          ? "read as genuinely open — treated as neither"
+          ? "read as genuinely open, treated as neither"
           : `read as ${band === "fires" ? "yes" : "no"}, but only just`;
     } else if (isChoice(a)) {
       assumed = `read as ${OUTPUT_SHAPE_READING[a.choice as OutputShape] ?? a.choice}, with other readings close behind`;

@@ -1,31 +1,43 @@
 import { notFound } from "next/navigation";
-import VerdictCard from "@/components/VerdictCard";
+import Link from "next/link";
+import Studio from "@/components/Studio";
 import { getVerdict } from "@/lib/store";
+import { VERDICT_GIST } from "@/components/verdict-meta";
 
-export default async function VerdictPage({
-  params,
-}: {
-  params: Promise<{ hash: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ hash: string }> }) {
   const { hash } = await params;
   const record = await getVerdict(hash);
+  if (!record) return { title: "Verdict not found" };
+  const title = `${record.verdict.headline} · Does it fit Jev?`;
+  const description = `"${record.description.slice(0, 120)}", ${VERDICT_GIST[record.verdict.kind]}`;
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { card: "summary_large_image" as const, title, description },
+  };
+}
 
-  if (!record) {
-    notFound();
-  }
+export default async function VerdictPage({ params }: { params: Promise<{ hash: string }> }) {
+  const { hash } = await params;
+  const record = await getVerdict(hash);
+  if (!record) notFound();
 
   return (
-    <main className="flex flex-1 flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <div className="text-xs font-mono uppercase tracking-widest text-[var(--text-faint)]">
-          jev-fit / verdict
-        </div>
-        <p className="whitespace-pre-wrap text-base leading-relaxed text-[var(--text)]">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
+      <header className="flex flex-col gap-4">
+        <Link
+          href="/"
+          className="w-fit text-[13px] text-[var(--faint)] transition hover:text-[var(--accent)]"
+        >
+          Does it fit Jev?
+        </Link>
+        <p className="max-w-[60ch] text-xl leading-relaxed text-[var(--text)] sm:text-2xl">
           {record.description}
         </p>
-      </div>
+      </header>
 
-      <VerdictCard record={record} />
+      <Studio initial={record} />
     </main>
   );
 }

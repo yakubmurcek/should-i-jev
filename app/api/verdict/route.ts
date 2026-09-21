@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   if (typeof description !== "string" || description.trim().length < MIN_DESCRIPTION_CHARS) {
     return fail(
       400,
-      `Describe the feature in at least ${MIN_DESCRIPTION_CHARS} characters — what goes in, what comes out, and the call being made.`,
+      `Describe the feature in at least ${MIN_DESCRIPTION_CHARS} characters, what goes in, what comes out, and the call being made.`,
     );
   }
 

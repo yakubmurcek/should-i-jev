@@ -1,36 +1,24 @@
-import DescribeForm from "@/components/DescribeForm";
+import Studio from "@/components/Studio";
 
 export default function HomePage() {
   return (
-    <main className="flex flex-1 flex-col gap-10">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
       <header className="flex flex-col gap-4">
-        <div className="text-xs font-mono uppercase tracking-widest text-[var(--text-faint)]">
-          jev-fit
-        </div>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Does your feature fit Jev?
+        <h1 className="max-w-[16ch] text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
+          Does it fit Jev?
         </h1>
-        <div className="flex flex-col gap-3 text-base leading-relaxed text-[var(--text-dim)]">
-          <p>
-            Jev is TypeSafe&apos;s typed-judgment model: instead of writing prose, it
-            returns a chosen option, a calibrated probability, or a score on a
-            scale you define — so it sits between an <code className="font-mono text-[var(--text)]">if</code>{" "}
-            statement and an LLM.
-          </p>
-          <p>
-            Describe a feature below and this tool runs it through the same
-            questions TypeSafe documents as Jev&apos;s strengths and weaknesses,
-            then composes a verdict in code — not by asking Jev to grade itself.
-          </p>
-          <p>
-            It is willing to say no. &ldquo;Just write code&rdquo; and &ldquo;not
-            enough to judge&rdquo; are correct outcomes here, not failures of the
-            tool.
-          </p>
-        </div>
+        <p className="max-w-[54ch] text-lg leading-relaxed text-[var(--dim)] sm:text-xl">
+          Jev returns typed judgments instead of prose, so it sits between an{" "}
+          <code className="font-[family-name:var(--font-mono)] text-[var(--text)]">if</code> and an
+          LLM. Describe a feature and watch it get ruled on.
+        </p>
       </header>
 
-      <DescribeForm />
+      <Studio />
+
+      <footer className="border-t border-[var(--line-soft)] pt-6 text-[13px] text-[var(--faint)]">
+        It says no. &ldquo;Just write code&rdquo; is a real answer here, and the most common one.
+      </footer>
     </main>
   );
 }

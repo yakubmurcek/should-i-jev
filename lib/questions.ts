@@ -197,7 +197,7 @@ export const QUESTIONS: Record<string, Question> = {
   needs_external_lookup: {
     type: "noul",
     instructions:
-      "Does reaching the answer require fetching data that is not in the input — calling a tool, querying a system, or looking something up elsewhere?",
+      "Does reaching the answer require fetching data that is not in the input, calling a tool, querying a system, or looking something up elsewhere?",
     criteria: {
       true: "Everything needed to decide is not present in the text itself; something must be retrieved from outside it first.",
       false: "Everything needed to decide is present in the input as given.",
@@ -214,7 +214,7 @@ export const QUESTIONS: Record<string, Question> = {
   labelled_outcomes_exist: {
     type: "noul",
     instructions:
-      "Does the team already have a large history of past examples of this decision WITH the correct answer recorded for each — enough to train a model on?",
+      "Does the team already have a large history of past examples of this decision WITH the correct answer recorded for each, enough to train a model on?",
     criteria: {
       true: "The decision has been made many times already and each past answer was recorded, so the history could be used as training data today.",
       false:
@@ -264,7 +264,7 @@ export const QUESTIONS: Record<string, Question> = {
   high_consequence: {
     type: "noul",
     instructions:
-      "Would a wrong answer here cause material harm — losing money, endangering someone, creating legal exposure, or taking an action that cannot be undone?",
+      "Would a wrong answer here cause material harm, losing money, endangering someone, creating legal exposure, or taking an action that cannot be undone?",
     criteria: {
       true: "A mistake costs money, affects someone's safety or rights, creates legal exposure, or performs an irreversible action such as deleting, publishing or paying.",
       false:
@@ -277,11 +277,33 @@ export const QUESTIONS: Record<string, Question> = {
       "How much understanding of language does deciding this correctly actually require?",
     // Levels describe concrete, non-overlapping situations and stand alone.
     criteria: [
-      "The input contains an exact value — a code, an ID, a fixed keyword — and finding that value settles the answer. A lookup table would be right every time.",
+      "The input contains an exact value, a code, an ID, a fixed keyword, and finding that value settles the answer. A lookup table would be right every time.",
       "The same thing arrives worded many different ways, with synonyms, abbreviations and typos. Recognising that two phrasings mean the same thing settles it; nothing else is needed.",
       "The same words mean different things in different places, so the surrounding text decides which reading is correct.",
       "Someone who knows the field weighs competing considerations, and two informed practitioners could reasonably disagree about a borderline case.",
     ],
+  },
+
+  // Which HALF of the decision is missing. `description_specificity` says how
+  // pinned-down a description is but not which end is vague, and the card needs
+  // that to offer something to fill in instead of a dead end.
+  states_input: {
+    type: "noul",
+    instructions:
+      "Does the description say what data the feature actually reads, the text, record or values it looks at when it runs?",
+    criteria: {
+      true: "The input is identified concretely enough to picture: an email, a listing, a transcript, a row with named fields.",
+      false: "What the feature reads is left unsaid, or gestured at so generally that it could be almost anything.",
+    },
+  },
+  states_output: {
+    type: "noul",
+    instructions:
+      "Does the description say what the feature hands back, the label, number, record or action that comes out of it?",
+    criteria: {
+      true: "The output is identified concretely enough to picture: a category from a named set, a score, a flag, a filled record, an action taken.",
+      false: "What comes out is left unsaid, or described only as something vague like 'handles it' or 'works out what to do'.",
+    },
   },
 
   // ---- §4.3 Gate.
@@ -290,7 +312,7 @@ export const QUESTIONS: Record<string, Question> = {
     instructions:
       "How concretely does the description pin down what goes in, what comes out, and the decision being made in between?",
     criteria: [
-      "It names a subject area or an ambition — an industry, a product, a hope that AI might help — without identifying any particular decision.",
+      "It names a subject area or an ambition, an industry, a product, a hope that AI might help, without identifying any particular decision.",
       "It names a decision but says neither what data goes in nor what comes out.",
       "It pins down one side only: either what goes in or what comes out, with the other side left to guess.",
       "It states what goes in, what comes out, and the basis for the call, so a programmer could start without asking a question.",

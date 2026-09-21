@@ -56,6 +56,8 @@ export function baseline(): Record<string, Answer> {
     high_consequence: noul(0.12),
     semantic_depth: score("semantic_depth", 2, 0.87),
     description_specificity: score("description_specificity", 3, 0.9),
+    states_input: noul(0.93),
+    states_output: noul(0.92),
     primitive_fit: choice("choice", 0.9),
     pattern_fit: choice("intent_routing", 0.84),
   };

@@ -3,76 +3,47 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0a0b0d;
-  --bg-raised: #111318;
-  --bg-inset: #0d0f13;
-  --border: #22262e;
-  --border-soft: #1a1d23;
-  --text: #e6e8eb;
-  --text-dim: #9aa1ab;
-  --text-faint: #5f6670;
-  --accent: #5eead4;
-  --accent-dim: #1a3a35;
+  --bg: #0a0a0b;
+  --bg-lift: #121214;
+  --line: #24242a;
+  --line-soft: #1b1b20;
+  --text: #ededf0;
+  --dim: #8f8f9a;
+  --faint: #5d5d68;
 
-  /* verdict kinds — distinguishable but sober, not neon */
-  --v-just-write-code: #8b93a1;
-  --v-jev-fits: #5eead4;
-  --v-use-an-llm: #c9a86a;
-  --v-jev-plus-llm: #7aa8d8;
-  --v-classical-ml: #b18ad0;
-  --v-not-enough: #d17d7d;
+  /* One accent. Everything interactive is this colour. */
+  --accent: #c2f04a;
+  --accent-ink: #0a0a0b;
+
+  /* Verdict colours are semantic state, not decoration. */
+  --v-fits: #c2f04a;
+  --v-code: #62d0ff;
+  --v-llm: #ffb454;
+  --v-both: #c08bff;
+  --v-ml: #ff7a9c;
+  --v-unknown: #8f8f9a;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  color-scheme: dark;
-}
+html, body { background: var(--bg); color: var(--text); }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-.font-mono {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+::selection { background: var(--accent); color: var(--accent-ink); }
+
+/* Focus is visible and uses the one accent, everywhere. */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-::selection {
-  background: var(--accent-dim);
-  color: var(--text);
-}
-
-textarea, input, button {
-  font-family: inherit;
-}
-
-a {
-  color: var(--accent);
-}
-
-/* details/summary chevron */
-details > summary {
-  list-style: none;
-  cursor: pointer;
-}
-details > summary::-webkit-details-marker {
-  display: none;
-}
-details[open] summary .chevron {
-  transform: rotate(90deg);
-}
-.chevron {
-  display: inline-block;
-  transition: transform 120ms ease;
-}
-
-pre {
-  white-space: pre-wrap;
-  word-break: break-word;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

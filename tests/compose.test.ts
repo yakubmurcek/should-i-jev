@@ -130,6 +130,46 @@ describe("the floor only withholds on uncertainty that could change the verdict"
   });
 });
 
+describe("a vague description is playable, not rejected", () => {
+  it("names the halves the description left out", () => {
+    const v = compose(
+      withAnswers({
+        description_specificity: score("description_specificity", 0, 0.95),
+        states_input: noul(0.1),
+        states_output: noul(0.08),
+      }),
+    );
+    expect(v.kind).toBe("not_enough_to_judge");
+    expect(v.gaps.map((g) => g.key)).toEqual(["input", "output", "basis"]);
+    // Every gap offers something concrete to tap, never just a complaint.
+    for (const g of v.gaps) expect(g.chips.length).toBeGreaterThan(2);
+  });
+
+  it("only asks for the half that is actually missing", () => {
+    const v = compose(
+      withAnswers({
+        description_specificity: score("description_specificity", 2, 0.9),
+        states_input: noul(0.95),
+        states_output: noul(0.06),
+      }),
+    );
+    expect(v.gaps.map((g) => g.key)).toEqual(["output", "basis"]);
+  });
+
+  it("reports sharpness so the meter can move as the description improves", () => {
+    const vague = compose(
+      withAnswers({ description_specificity: score("description_specificity", 0, 0.9) }),
+    );
+    const sharp = compose();
+    expect(vague.sharpness).toBe(0);
+    expect(sharp.sharpness).toBe(1);
+  });
+
+  it("asks for nothing once the description states all three", () => {
+    expect(compose().gaps).toEqual([]);
+  });
+});
+
 describe("probabilities are never compared across primitive types", () => {
   it("bands a Noul on its probability and a Choice/Score on confidence", () => {
     // A Noul at 0.05 is a CONFIDENT no, not a weak answer. If the floor were
@@ -209,6 +249,6 @@ describe("contract failures surface as errors, never as an empty verdict", () =>
   });
 
   it("asks exactly the fifteen questions of the spec", () => {
-    expect(QUESTION_IDS).toHaveLength(17);
+    expect(QUESTION_IDS).toHaveLength(19);
   });
 });

@@ -1,19 +1,28 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+const sans = Geist({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
+
 export const metadata: Metadata = {
-  title: "Jev Fit",
+  title: "Does it fit Jev?",
   description:
-    "Describe a feature. Get a typed verdict on whether it fits Jev, an LLM, classical ML, or just plain code.",
+    "Describe a feature. Watch nineteen typed judgments resolve, and get a verdict on what should actually power it. It says no.",
+  openGraph: {
+    title: "Does it fit Jev?",
+    description:
+      "Describe a feature. Watch nineteen typed judgments resolve, and get a verdict on what should actually power it.",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image", title: "Does it fit Jev?" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen">
-        <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-4 py-10 sm:px-6 sm:py-16">
-          {children}
-        </div>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+      <body className="min-h-[100dvh] font-[family-name:var(--font-sans)] antialiased">
+        {children}
       </body>
     </html>
   );
