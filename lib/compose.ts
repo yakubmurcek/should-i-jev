@@ -79,24 +79,28 @@ export const VETO_PRECEDENCE: VetoId[] = [
 ];
 
 /**
- * DEPARTURE FROM THE SPEC (§4.1), made on measured evidence.
+ * DEPARTURE FROM THE SPEC (§4.1), made on measured evidence, in two steps.
  *
  * The spec lists `untrusted_input` as one of seven independent vetoes. Held
  * that way it disqualifies almost every real Jev integration, because almost
- * all of them judge text somebody outside the company wrote: across the
- * recorded fixtures it fires at 0.88 on support-email routing, which is
- * TypeSafe's own canonical use case. A veto that rules out the canonical case
- * is encoding the weakness wrongly.
+ * all of them judge text somebody outside the company wrote: it fires at 0.88
+ * on support-email routing, TypeSafe's own canonical use case.
  *
- * What the jaggedness page actually says is that Jev "doesn't treat state as
- * hostile" — injected instructions can steer the answer. The cost of being
- * steered is what matters. Steered into a reversible label a human will see is
- * an annoyance; steered into a payout, a deletion or a publication is the
- * documented risk. So untrusted input disqualifies Jev when, and only when,
- * `high_consequence` also fires. Otherwise it is carried onto the card as a
- * caveat rather than silently deciding the verdict.
+ * Making it conditional on `high_consequence` was the first correction, and it
+ * was still wrong. The recorded fixtures showed where: marketplace listing
+ * moderation (untrusted 0.93, consequence 0.72) and payout-fraud review
+ * (untrusted 0.74, consequence 0.94) both came out "just write code" — advice
+ * that is useless, because code cannot moderate a listing or read a fraud
+ * signal. A veto is the wrong instrument entirely.
+ *
+ * What the jaggedness page says is that Jev "doesn't treat state as hostile":
+ * injected instructions can steer the answer. The documented remedy for a
+ * consequential decision is not to avoid the model, it is confidence-gated
+ * routing — don't let it ACT alone. So untrusted input never changes which
+ * mechanism fits. It forces the verdict to be stated as provisional, with a
+ * human in the loop, and puts the injection risk on the card in words.
  */
-export const CONDITIONAL_VETOES: VetoId[] = ["untrusted_input"];
+export const NEVER_VETO: VetoId[] = ["untrusted_input"];
 
 const VETO_VERDICT: Record<VetoId, VerdictKind> = {
   deterministic_rule_exists: "just_write_code",
@@ -314,13 +318,9 @@ export function composeVerdict(
   const consequence = require_(answers, "high_consequence", isNoul);
   const consequenceFires = bandNoul(consequence.noul) === "fires";
 
-  const blocking = firing.filter((id) => {
-    if (id === "needs_generation") return false;
-    // A conditional veto only blocks when a wrong answer would cost something
-    // material; otherwise it rides along as a caveat.
-    if (CONDITIONAL_VETOES.includes(id)) return consequenceFires;
-    return true;
-  });
+  const blocking = firing.filter(
+    (id) => id !== "needs_generation" && !NEVER_VETO.includes(id),
+  );
   if (blocking.length > 0) {
     const winner = blocking[0]!; // VETO_PRECEDENCE order is preserved
     consume(ctx, winner, "yes", 1);
@@ -335,9 +335,7 @@ export function composeVerdict(
     });
   }
 
-  const carriedCaveats = firing.filter(
-    (id) => CONDITIONAL_VETOES.includes(id) && !blocking.includes(id),
-  );
+  const carriedCaveats = firing.filter((id) => NEVER_VETO.includes(id));
 
   // A veto sitting in the `uncertain` band is the case where we cannot say
   // whether Jev is disqualified at all. That is exactly a deciding answer below
@@ -345,7 +343,8 @@ export function composeVerdict(
   // into "Not enough to judge" naming the dimension. A veto that fires outright
   // is definite knowledge and has already won above.
   for (const id of VETO_PRECEDENCE) {
-    const a = require_(answers, id, isNoul);
+    if (NEVER_VETO.includes(id)) continue; // it cannot disqualify, so its
+    const a = require_(answers, id, isNoul); // uncertainty cannot withhold
     if (bandNoul(a.noul) === "uncertain") consume(ctx, id, "as likely as not", 1);
   }
 
@@ -433,12 +432,12 @@ export function composeVerdict(
       "What would change this: whether meaning varies with context. The moment the same words mean different things in different places, this moves back to a language judgment.";
   } else if (fitScore >= JEV_FIT_THRESHOLD) {
     kind = "jev_fits";
-    why = `it is a repeated judgment over language with a ${OUTPUT_SHAPE_READING[shapeChoice]}, which is the shape typed judgments are for`;
+    why = `it is a repeated judgment over language returning ${OUTPUT_SHAPE_READING[shapeChoice]}, which is the shape typed judgments are for`;
     flip =
       "What would change this: the volume. A judgment made a handful of times a week is worth a person's attention rather than a model's.";
   } else if (depthLevel >= 2) {
     kind = "use_an_llm";
-    why = `the judgment needs real reading, but its output is ${OUTPUT_SHAPE_READING[shapeChoice]}, which is not a shape a typed judgment returns well`;
+    why = `the judgment needs real reading, but it returns ${OUTPUT_SHAPE_READING[shapeChoice]}, which is not a shape a typed judgment returns well`;
     flip =
       "What would change this: the output. If it can be reduced to a fixed set of options, this becomes a typed judgment.";
   } else {
@@ -461,8 +460,15 @@ export function composeVerdict(
       " Note: this needs data fetched from elsewhere. Fetch it in code and pass the result in state — retrieval is code's job, and the judgment is a separate step afterwards.";
   }
 
-  if (carriedCaveats.includes("untrusted_input") && kind !== "just_write_code") {
-    why += ". The text it judges is public, and Jev does not treat its state as hostile — keep the decision reversible and visible, because someone will write text aimed at steering it";
+  const injectable = carriedCaveats.includes("untrusted_input");
+  if (injectable && kind !== "just_write_code") {
+    why +=
+      ". The text it judges is public, and Jev does not treat its state as hostile — someone will write text aimed at steering it";
+    flip = consequenceFires
+      ? "Do not let this act on its own. A wrong answer here costs something material and the text that produces it is written by people who benefit from a particular answer, so gate on confidence and put a person on the cases below the bar. " +
+        flip
+      : "Keep the decision reversible and visible — a steered label a person can correct is an annoyance, a steered action is not. " +
+        flip;
   }
 
   return finish(ctx, {
@@ -473,6 +479,7 @@ export function composeVerdict(
     fitScore,
     provisional: false,
     consequenceFires,
+    injectable,
   });
 }
 
@@ -484,6 +491,7 @@ type Draft = {
   fitScore: number | null;
   provisional: boolean;
   consequenceFires?: boolean;
+  injectable?: boolean;
 };
 
 /**
@@ -528,7 +536,10 @@ function finish(ctx: Ctx, draft: Draft): Verdict {
   const provisional =
     draft.consequenceFires === true &&
     weakest >= FLOOR &&
-    weakest < HIGH_CONSEQUENCE_ACT;
+    // Public text plus a material cost is never stated as settled, however
+    // concentrated the answers are: confidence measures the model's certainty,
+    // not whether somebody wrote the input to steer it.
+    (draft.injectable === true || weakest < HIGH_CONSEQUENCE_ACT);
 
   return {
     kind: draft.kind,

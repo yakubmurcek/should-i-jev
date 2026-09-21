@@ -58,8 +58,12 @@ Two rules the code holds to throughout:
 ```bash
 npm install
 cp .env.example .env.local   # add TYPESAFE_API_KEY
-npm run dev
+npm run dev                  # http://localhost:3000
 ```
+
+Permalinks work without KV configured — the dev fallback store is shared across
+module instances on purpose, because Next gives route handlers and server
+components separate ones and a plain module-scope Map 404s every `/v/<hash>`.
 
 ## Tests
 
@@ -140,7 +144,23 @@ and the `parallel_questions` cookbook. What the audit changed:
   return prose at all, so no weighting rescues it.
 
 Seventeen questions, 2,872 input tokens per request (+2.4% for the two added
-questions), one request per verdict, cached by content hash. The remaining gap is not the system disagreeing with
+questions), one request per verdict, cached by content hash.
+
+### `untrusted_input` is not a veto
+
+Held as one it ruled out every job that reads public text — support routing,
+listing moderation, payout-fraud review — and told you to "just write code" for
+work code cannot do. The jaggedness page says Jev "doesn't treat state as
+hostile"; the documented remedy for that is confidence-gated routing, not
+avoidance. So it never changes WHICH mechanism fits. It marks the verdict
+provisional, says so on the card, and says what to do about it: keep the
+decision reversible, and put a person on it when a wrong answer costs money.
+
+Agreement between recorded answers and the hand-authored expectations, in order:
+**6/27 -> 14/28 -> 19/28 -> 27/28.** The one standing divergence is
+`floor-uncertain-veto`, whose description now draws a confident answer from the
+real model, so it no longer exercises the uncertain-veto branch live; the offline
+unit tests still cover that branch directly. The remaining gap is not the system disagreeing with
 itself; it is fixture descriptions that trip vetoes I did not intend (an insurance
 example that says "incident date" fires `needs_temporal_reasoning` at 0.91) plus
 threshold tuning against real answers, which is open question 4 in the spec. Those

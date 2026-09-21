@@ -3,7 +3,7 @@ import { MissingAnswerError, composeVerdict, JEV_FIT_THRESHOLD, WEIGHTS } from "
 import { FLOOR } from "@/lib/bands";
 import { QUESTION_IDS, VETO_IDS } from "@/lib/questions";
 import { FIXTURES } from "./fixtures";
-import { baseline, noul, score, withAnswers } from "./answers";
+import { baseline, choice, noul, score, withAnswers } from "./answers";
 
 const MODEL = "jev-1.13.0";
 const compose = (answers = baseline()) => composeVerdict(answers, MODEL);
@@ -43,9 +43,10 @@ describe("golden fixtures", () => {
     for (const veto of VETO_IDS) {
       // `untrusted_input` is conditional: it blocks only when a wrong answer
       // costs something material (see CONDITIONAL_VETOES in lib/compose.ts).
-      const extra: Record<string, ReturnType<typeof noul>> =
-        veto === "untrusted_input" ? { high_consequence: noul(0.9) } : {};
-      const v = compose(withAnswers({ [veto]: noul(0.93), ...extra }));
+      // `untrusted_input` is no longer a veto at all (see NEVER_VETO): it
+      // changes how the verdict may be acted on, not which verdict it is.
+      if (veto === "untrusted_input") continue;
+      const v = compose(withAnswers({ [veto]: noul(0.93) }));
       expect(v.kind, `${veto} did not override a strong Jev-fit score`).not.toBe("jev_fits");
       expect(v.deciding.map((d) => d.id)).toContain(veto);
     }
@@ -79,16 +80,39 @@ describe("the card is honest about what it does not know", () => {
   });
 });
 
-describe("untrusted input is weighed by what being steered would cost", () => {
-  it("blocks when a wrong answer costs something material", () => {
-    const v = compose(withAnswers({ untrusted_input: noul(0.93), high_consequence: noul(0.9) }));
-    expect(v.kind).toBe("just_write_code");
+describe("untrusted input changes how the verdict may be acted on, not which one", () => {
+  it("never vetoes — code cannot do the jobs that read public text", () => {
+    for (const consequence of [noul(0.9), noul(0.08)]) {
+      const v = compose(withAnswers({ untrusted_input: noul(0.93), high_consequence: consequence }));
+      expect(v.kind).toBe("jev_fits");
+      expect(v.why).toContain("does not treat its state as hostile");
+    }
   });
 
-  it("rides along as a caveat when the decision is reversible", () => {
-    const v = compose(withAnswers({ untrusted_input: noul(0.93), high_consequence: noul(0.08) }));
-    expect(v.kind).toBe("jev_fits");
-    expect(v.why).toContain("does not treat its state as hostile");
+  it("is provisional when a wrong answer also costs something material", () => {
+    const v = compose(withAnswers({ untrusted_input: noul(0.93), high_consequence: noul(0.9) }));
+    expect(v.provisional).toBe(true);
+    expect(v.whatWouldChangeThis).toContain("act on its own");
+  });
+
+  it("stays provisional however concentrated the answers are", () => {
+    // Confidence measures the model's certainty, not whether somebody wrote
+    // the input in order to steer it.
+    const v = compose(
+      withAnswers({
+        untrusted_input: noul(0.97),
+        high_consequence: noul(0.96),
+        semantic_depth: score("semantic_depth", 2, 0.98),
+        output_shape: choice("closed_set", 0.99),
+        description_specificity: score("description_specificity", 3, 0.98),
+      }),
+    );
+    expect(v.provisional).toBe(true);
+  });
+
+  it("is not provisional when nothing material is at stake", () => {
+    const v = compose(withAnswers({ untrusted_input: noul(0.93), high_consequence: noul(0.05) }));
+    expect(v.provisional).toBe(false);
   });
 });
 

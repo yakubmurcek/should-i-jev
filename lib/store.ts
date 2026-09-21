@@ -30,8 +30,19 @@ function client(): Redis | null {
   return redis;
 }
 
-/** Local dev without KV configured still works; it just forgets on restart. */
-const memory = new Map<string, { value: unknown; expires: number }>();
+/**
+ * Local dev without KV configured still works; it just forgets on restart.
+ *
+ * Hung off globalThis on purpose: Next gives route handlers and server
+ * components separate module instances, so a plain module-scope Map means a
+ * verdict written by POST /api/verdict is invisible to /v/<hash> and every
+ * permalink 404s locally.
+ */
+type MemoryEntry = { value: unknown; expires: number };
+const globalMemory = globalThis as typeof globalThis & {
+  __jevFitMemory?: Map<string, MemoryEntry>;
+};
+const memory = (globalMemory.__jevFitMemory ??= new Map<string, MemoryEntry>());
 
 function memGet<T>(key: string): T | null {
   const hit = memory.get(key);

@@ -104,13 +104,13 @@ export const FIXTURES: Fixture[] = [
     answers: vetoFires("needs_numeric_comparison"),
   },
   {
-    id: "veto-untrusted-input-when-consequential",
+    id: "untrusted-and-consequential-is-provisional-not-vetoed",
     description:
-      "Read publicly submitted vendor applications and decide which ones get fast-tracked for approval.",
-    expect: "just_write_code",
+      "Read publicly submitted vendor applications and mark each one approved, rejected, or needs-review.",
+    expect: "jev_fits",
     proves:
-      "adversarial state disqualifies Jev when a wrong answer costs something material — it does not treat its state as hostile",
-    alsoExpect: { decidingIncludes: "untrusted_input" },
+      "public text plus a material cost does not change WHICH mechanism fits — it changes whether the answer may act alone. Code cannot read a vendor application, so vetoing here would be advice nobody can follow",
+    alsoExpect: { provisional: true },
     answers: vetoFires("untrusted_input", { high_consequence: noul(0.9) }),
   },
   {
@@ -125,7 +125,7 @@ export const FIXTURES: Fixture[] = [
   {
     id: "veto-multihop",
     description:
-      "Work out whether a claim is covered: find the policy it belongs to, check which endorsements applied on the incident date, then decide if the exclusion list catches it.",
+      "Work out whether a claim is covered: find which policy it belongs to, then read that policy's endorsements, then decide whether any exclusion in them catches the claim.",
     expect: "use_an_llm",
     proves: "multi-hop indirection disqualifies Jev and points at an LLM, not at code",
     alsoExpect: { decidingIncludes: "needs_multihop_reasoning" },
@@ -146,7 +146,7 @@ export const FIXTURES: Fixture[] = [
   {
     id: "veto-generation-with-typed-decision",
     description:
-      "For each inbound support email, decide which of our four escalation tiers it belongs to and then draft the acknowledgement that goes with that tier.",
+      "Each inbound support email gets one of our four escalation tiers, judged from what the customer wrote, plus an acknowledgement written in that tier's wording.",
     expect: "jev_plus_llm",
     proves: "generation does not disqualify Jev when a typed decision sits in front of the writing",
     alsoExpect: { decidingIncludes: "needs_generation" },
@@ -198,7 +198,7 @@ export const FIXTURES: Fixture[] = [
   {
     id: "code-shallow-and-rare",
     description:
-      "Once a quarter, mark which of our six internal report templates a finance request is asking for, based on the template name the requester typed.",
+      "Once a quarter, a member of the finance team types one of our six report template names into a box, and we mark which template that is.",
     expect: "just_write_code",
     proves: "no veto fires, but with neither depth nor volume the composite still lands on code",
     answers: withAnswers({
@@ -224,7 +224,7 @@ export const FIXTURES: Fixture[] = [
   {
     id: "llm-deep-but-open-output",
     description:
-      "Read each incident post-mortem and produce the structured set of follow-up actions the reader should take, whatever those turn out to be.",
+      "Read each incident post-mortem and write the follow-up section for it, in whatever prose the incident calls for.",
     expect: "use_an_llm",
     proves: "real reading with an open-ended output is not a shape a typed judgment returns",
     answers: withAnswers({
@@ -239,7 +239,7 @@ export const FIXTURES: Fixture[] = [
   {
     id: "ml-high-volume-shallow",
     description:
-      "Across roughly two million product titles a day, tag each one with the department it belongs to; the titles use the same vocabulary over and over, just spelled and abbreviated differently.",
+      "Across roughly two million product titles a day, tag each one with the department it belongs to. The titles reuse the same vocabulary with different spellings and abbreviations, and we already have eight years of titles with the correct department recorded for every one of them.",
     expect: "classical_ml",
     proves: "volume without language understanding is a classifier's job, not a typed judgment's",
     answers: withAnswers({
@@ -258,6 +258,7 @@ export const FIXTURES: Fixture[] = [
     answers: withAnswers({
       semantic_depth: score("semantic_depth", 2, 0.89),
       repeated_at_volume: noul(0.98),
+      labelled_outcomes_exist: noul(0.9),
     }),
   },
 
@@ -278,7 +279,7 @@ export const FIXTURES: Fixture[] = [
   {
     id: "gate-unclear-output-shape",
     description:
-      "Something that looks at each new user signup and works out what we ought to do about it.",
+      "Something that looks at each new user signup and works out what we ought to do about it. We have not decided what it should hand back.",
     expect: "not_enough_to_judge",
     proves: "the no-match option on output_shape is a real answer, not a scoring input",
     alsoExpect: { decidingIncludes: "output_shape" },
