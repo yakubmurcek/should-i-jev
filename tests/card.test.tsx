@@ -4,6 +4,7 @@ import VerdictBanner from "@/components/VerdictBanner";
 import VerdictDetails from "@/components/VerdictDetails";
 import JudgmentGrid from "@/components/JudgmentGrid";
 import { GROUPS, VERDICT_GIST } from "@/components/verdict-meta";
+import { DefaultCardImage, OG_COLOR, VerdictCardImage, clamp } from "@/components/og";
 import { composeVerdict } from "@/lib/compose";
 import { QUESTIONS, QUESTION_IDS } from "@/lib/questions";
 import { buildState } from "@/lib/state";
@@ -59,5 +60,53 @@ describe("the judgment grid shows every question", () => {
     const grouped = GROUPS.flatMap((g) => g.ids);
     expect(new Set(grouped).size).toBe(grouped.length);
     expect([...grouped].sort()).toEqual([...QUESTION_IDS].sort());
+  });
+});
+
+describe("the share card", () => {
+  it("renders for every fixture, including the ones that say no", () => {
+    for (const f of FIXTURES) {
+      const html = renderToStaticMarkup(<VerdictCardImage record={recordFor(f)} />);
+      expect(html).toContain(recordFor(f).verdict.headline);
+      // Real judgments on the card, not just the conclusion.
+      expect(html).toContain("a rule covers it");
+    }
+  });
+
+  it("falls back to the product card when a verdict has expired", () => {
+    const html = renderToStaticMarkup(<DefaultCardImage />);
+    expect(html).toContain("Does it fit Jev?");
+  });
+
+  it("gives every outcome its own colour, so a feed is legible", () => {
+    expect(new Set(Object.values(OG_COLOR)).size).toBe(Object.keys(OG_COLOR).length);
+  });
+
+  it("paints the card in the colour of its own verdict", () => {
+    for (const f of FIXTURES) {
+      const record = recordFor(f);
+      const html = renderToStaticMarkup(<VerdictCardImage record={record} />);
+      expect(html).toContain(OG_COLOR[record.verdict.kind]);
+    }
+  });
+
+  it("cuts long text at a word boundary, never mid-word", () => {
+    const text = "Flagged marketplace listings need a severity level assigned from the body";
+    const cut = clamp(text, 40);
+    expect(cut.endsWith("...")).toBe(true);
+    // What survives is a whole-word prefix of the original.
+    const kept = cut.slice(0, -3);
+    expect(text.startsWith(kept)).toBe(true);
+    expect(text[kept.length]).toBe(" ");
+  });
+
+  it("leaves text that already fits completely alone", () => {
+    expect(clamp("short enough", 40)).toBe("short enough");
+  });
+
+  it("still cuts a single unbroken token rather than overflowing", () => {
+    const cut = clamp("x".repeat(80), 20);
+    expect(cut.length).toBeLessThanOrEqual(23);
+    expect(cut.endsWith("...")).toBe(true);
   });
 });
