@@ -71,13 +71,24 @@ export async function putVerdict(record: VerdictRecord): Promise<void> {
   await kv.set(key, record, { ex: TTL_SECONDS });
 }
 
-/** §7 — rate limit by IP at the route. Fixed window, cheap and sufficient. */
-export const RATE_LIMIT = { max: 8, windowSeconds: 60 * 10 };
+/**
+ * §7 — rate limit by IP at the route. Fixed window, cheap and sufficient.
+ *
+ * Eight was too tight to actually try the tool: pasting a handful of ideas in
+ * one sitting hit the wall on the ninth, which reads as broken rather than as
+ * rate limiting. A cached verdict never reaches the limiter, so the budget is
+ * spent only on genuinely new descriptions.
+ */
+export const RATE_LIMIT = { max: 25, windowSeconds: 60 * 10 };
 
 export async function checkRateLimit(
   ip: string,
-): Promise<{ ok: boolean; remaining: number }> {
-  const bucket = Math.floor(Date.now() / (RATE_LIMIT.windowSeconds * 1000));
+): Promise<{ ok: boolean; remaining: number; resetInSeconds: number }> {
+  const windowMs = RATE_LIMIT.windowSeconds * 1000;
+  const bucket = Math.floor(Date.now() / windowMs);
+  // Fixed window, so the reset is the start of the next bucket. Telling the
+  // visitor "a few minutes" when it is twenty seconds away loses them.
+  const resetInSeconds = Math.ceil(((bucket + 1) * windowMs - Date.now()) / 1000);
   const key = `rl:${ip}:${bucket}`;
   const kv = client();
 
@@ -90,5 +101,9 @@ export async function checkRateLimit(
     if (count === 1) await kv.expire(key, RATE_LIMIT.windowSeconds);
   }
 
-  return { ok: count <= RATE_LIMIT.max, remaining: Math.max(0, RATE_LIMIT.max - count) };
+  return {
+    ok: count <= RATE_LIMIT.max,
+    remaining: Math.max(0, RATE_LIMIT.max - count),
+    resetInSeconds,
+  };
 }

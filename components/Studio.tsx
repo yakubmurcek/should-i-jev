@@ -13,12 +13,21 @@ import VerdictDetails from "@/components/VerdictDetails";
 
 type Phase = "idle" | "running" | "done" | "error";
 
+/** Only warn about the rate limit once it is close enough to actually matter. */
+const LOW_REMAINING = 5;
+
 export default function Studio({ initial }: { initial?: VerdictRecord }) {
   const [text, setText] = useState(initial?.description ?? "");
   const [phase, setPhase] = useState<Phase>(initial ? "done" : "idle");
   const [record, setRecord] = useState<VerdictRecord | null>(initial ?? null);
   const [error, setError] = useState<{ code?: string; message: string; detail?: string } | null>(null);
   const [retryIn, setRetryIn] = useState<number | null>(null);
+  /**
+   * Verdicts left in this window, from the last response. Only shown once it
+   * gets low: a counter on screen from the first visit reads as a paywall, and
+   * running out with no warning at all reads as the tool being broken.
+   */
+  const [remaining, setRemaining] = useState<number | null>(null);
   const attemptRef = useRef(0);
   const [copied, setCopied] = useState(false);
   const boxRef = useRef<HTMLTextAreaElement>(null);
@@ -75,6 +84,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
         return;
       }
       attemptRef.current = 0;
+      if (typeof data.remaining === "number") setRemaining(data.remaining);
       setRecord(data as VerdictRecord);
       setPhase("done");
       window.history.replaceState(null, "", `/v/${data.id}`);
@@ -136,6 +146,13 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
             >
               {text.length}/{MAX_DESCRIPTION_CHARS}
             </span>
+            {remaining !== null && remaining <= LOW_REMAINING && (
+              <span className="text-[12px] text-[var(--dim)]">
+                {remaining === 0
+                  ? "No verdicts left for a few minutes"
+                  : `${remaining} ${remaining === 1 ? "verdict" : "verdicts"} left in this ten minutes`}
+              </span>
+            )}
             <button
               type="button"
               onClick={() => run()}

@@ -20,6 +20,19 @@ export const HIGH_CONSEQUENCE_ACT = 0.85;
 /** Below this an answer is reported as an assumption rather than a finding. */
 export const ASSUMED_BELOW = 0.8;
 
+/**
+ * The mass an option or level needs before the materiality probe treats it as a
+ * way this answer could really have resolved.
+ *
+ * Jev spreads a little mass over options it has all but ruled out. On a real
+ * "is this message angry enough to escalate?" the shape came back
+ * `action_with_parameters` 0.60, `closed_set` 0.38, `unclear` 0.01 — and
+ * probing `unclear` flipped the verdict, so the floor withheld a ruling that
+ * 98 % of the mass agreed on. A one-in-a-hundred option is not an alternative
+ * reading of the description, it is rounding.
+ */
+export const PLAUSIBLE_MASS = 0.1;
+
 export type NoulBand = "fires" | "uncertain" | "does_not_fire";
 
 /**

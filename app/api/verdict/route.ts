@@ -3,7 +3,7 @@ import { JevError, MODEL, askJev } from "@/lib/jev/client";
 import { QUESTIONS, QUESTION_IDS } from "@/lib/questions";
 import { MAX_DESCRIPTION_CHARS, MIN_DESCRIPTION_CHARS, buildState } from "@/lib/state";
 import { MissingAnswerError, composeVerdict } from "@/lib/compose";
-import { checkRateLimit, getVerdict, putVerdict, verdictId } from "@/lib/store";
+import { RATE_LIMIT, checkRateLimit, getVerdict, putVerdict, verdictId } from "@/lib/store";
 import type { VerdictRecord } from "@/lib/verdict";
 
 export const runtime = "nodejs";
@@ -61,12 +61,18 @@ export async function POST(req: Request) {
 
   const rate = await checkRateLimit(clientIp(req));
   if (!rate.ok) {
-    return fail(429, "rate_limited", "Too many verdicts from this address. Try again in a few minutes.");
+    const mins = Math.ceil(rate.resetInSeconds / 60);
+    return fail(
+      429,
+      "rate_limited",
+      `That is ${RATE_LIMIT.max} verdicts in ten minutes, which is the cap from one address.`,
+      `The counter resets in ${mins === 1 ? "under a minute" : `about ${mins} minutes`}. Verdicts you have already seen still open instantly — they are cached and do not count.`,
+    );
   }
 
   const state = buildState(description.trim());
 
-  // ONE request, fifteen questions, one subject. They are evaluated in parallel,
+  // ONE request, nineteen questions, one subject. They are evaluated in parallel,
   // so asking all of them costs little more than asking one.
   let response;
   try {
@@ -121,5 +127,5 @@ export async function POST(req: Request) {
 
   await putVerdict(record);
 
-  return NextResponse.json({ ...record, cached: false });
+  return NextResponse.json({ ...record, cached: false, remaining: rate.remaining });
 }

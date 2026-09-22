@@ -248,7 +248,118 @@ describe("contract failures surface as errors, never as an empty verdict", () =>
     expect(() => composeVerdict(answers, MODEL)).toThrow(MissingAnswerError);
   });
 
-  it("asks exactly the fifteen questions of the spec", () => {
+  it("asks exactly the nineteen questions of the spec", () => {
     expect(QUESTION_IDS).toHaveLength(19);
+  });
+});
+
+describe("an immaterial tail does not withhold a verdict", () => {
+  // Measured on the live API: "is this support message angry enough to
+  // escalate?" returned action_with_parameters just over half the mass,
+  // closed_set most of the rest, and unclear 0.01. Both real contenders rule
+  // the same way; probing the 1 % option flipped the verdict and the whole
+  // thing bailed out. The confidence sits below FLOOR on purpose — that is
+  // what puts the answer in front of the materiality check at all.
+  const angryShape = {
+    type: "choice" as const,
+    choice: "action_with_parameters",
+    confidence: 0.51,
+    probabilities: {
+      action_with_parameters: 0.51,
+      closed_set: 0.38,
+      unclear: 0.01,
+      degree_or_number: 0.01,
+      structured_record: 0,
+      free_prose: 0,
+    },
+  };
+
+  it("puts this answer below the floor, or the test proves nothing", () => {
+    expect(angryShape.confidence).toBeLessThan(FLOOR);
+  });
+
+  it("rules when the options carrying the mass all agree", () => {
+    const v = compose(withAnswers({ output_shape: angryShape }));
+    expect(v.kind, `why: ${v.why}`).toBe("jev_fits");
+  });
+
+  it("still withholds when a genuine contender would rule differently", () => {
+    // Same shape of uncertainty, but free_prose now carries real mass, and
+    // free_prose means use_an_llm. That is a real fork, so it must withhold.
+    const v = compose(
+      withAnswers({
+        output_shape: {
+          ...angryShape,
+          probabilities: { ...angryShape.probabilities, closed_set: 0.03, free_prose: 0.45 },
+        },
+      }),
+    );
+    expect(v.kind, `why: ${v.why}`).toBe("not_enough_to_judge");
+  });
+});
+
+describe("a veto says Jev is out, not that code is in", () => {
+  // Measured on the live API: "predict whether a trial user converts, we have
+  // three years of labelled outcomes" fired needs_temporal_reasoning at 0.85
+  // with labelled_outcomes_exist 0.94 and volume 0.84, and was told to just
+  // write code.
+  const trial = {
+    needs_temporal_reasoning: noul(0.85),
+    labelled_outcomes_exist: noul(0.94),
+    repeated_at_volume: noul(0.84),
+  };
+
+  it("routes a quantity veto to classical ML when labels exist at volume", () => {
+    const v = compose(withAnswers(trial));
+    expect(v.kind, `why: ${v.why}`).toBe("classical_ml");
+  });
+
+  it("names the labels as what would change it", () => {
+    const v = compose(withAnswers(trial));
+    expect(v.whatWouldChangeThis).toContain("labels");
+    expect(v.deciding.map((d) => d.id)).toContain("labelled_outcomes_exist");
+  });
+
+  it("still says write code when there is nothing to train on", () => {
+    const v = compose(withAnswers({ ...trial, labelled_outcomes_exist: noul(0.1) }));
+    expect(v.kind).toBe("just_write_code");
+  });
+
+  it("still says write code when the volume is not there", () => {
+    const v = compose(withAnswers({ ...trial, repeated_at_volume: noul(0.1) }));
+    expect(v.kind).toBe("just_write_code");
+  });
+
+  it("never trains a model to approximate an exact rule", () => {
+    // deterministic_rule_exists and needs_arithmetic are exactly computable,
+    // so labels must not pull them away from code.
+    for (const veto of ["deterministic_rule_exists", "needs_arithmetic"]) {
+      const v = compose(withAnswers({ ...trial, [veto]: noul(0.9) }));
+      expect(v.kind, `${veto} became ${v.kind}`).toBe("just_write_code");
+    }
+  });
+});
+
+describe("an immaterial uncertainty still earns the provisional caveat", () => {
+  // Measured: "is this comment harassment, anyone can post" came back
+  // jev_fits once the shape's immaterial tail stopped withholding it — and
+  // then stated flat, because the provisional gate read the below-floor shape
+  // as "too uncertain to even caveat". Public text plus a material cost is
+  // exactly what the caveat is for.
+  it("marks a consequential call on public text as provisional", () => {
+    const v = compose(
+      withAnswers({
+        untrusted_input: noul(0.95),
+        high_consequence: noul(0.79),
+        output_shape: {
+          type: "choice",
+          choice: "action_with_parameters",
+          confidence: 0.51,
+          probabilities: { action_with_parameters: 0.51, closed_set: 0.38, unclear: 0.01 },
+        },
+      }),
+    );
+    expect(v.kind, `why: ${v.why}`).toBe("jev_fits");
+    expect(v.provisional).toBe(true);
   });
 });
