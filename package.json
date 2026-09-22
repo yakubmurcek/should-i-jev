@@ -2,6 +2,27 @@
   "name": "should-i-jev",
   "version": "0.1.0",
   "private": true,
+  "description": "Describe a feature, get a verdict on what should power it: plain code, Jev, an LLM, or classical ML. An executable reading of TypeSafe's own jaggedness list.",
+  "license": "MIT",
+  "author": "Yakub Murcek",
+  "homepage": "https://github.com/yakubmurcek/should-i-jev#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yakubmurcek/should-i-jev.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yakubmurcek/should-i-jev/issues"
+  },
+  "keywords": [
+    "typesafe",
+    "jev",
+    "llm",
+    "decision",
+    "nextjs"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

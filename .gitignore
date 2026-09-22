@@ -7,3 +7,6 @@ next-env.d.ts
 .vercel
 .claude/worktrees
 tests/recorded-answers.json
+
+# Playwright MCP scratch output
+.playwright-mcp

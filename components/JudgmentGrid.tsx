@@ -25,10 +25,18 @@ function read(id: string, a: Answer): Reading {
     };
   }
   if (a.type === "score") {
-    const lvl = Math.round(a.score);
-    const levels = Object.keys(a.probabilities).map(Number);
-    const top = Math.max(...levels, lvl);
-    return { text: `${lvl} of ${top}`, value: a.score / Math.max(top, 1), fired: false, kind: "score" };
+    // Same reading as the share card: the scale comes from the legend, which
+    // always carries every level, not from the probabilities, which drop the
+    // ones with negligible mass. Levels are zero-indexed, so a reader sees
+    // level + 1 — otherwise the lowest level of four reads "0 of 3", which
+    // looks like nothing rather than like the bottom of the scale.
+    const levels = Object.keys(a.legend).length;
+    return {
+      text: `${Math.round(a.score) + 1} of ${levels}`,
+      value: levels > 1 ? a.score / (levels - 1) : 0,
+      fired: false,
+      kind: "score",
+    };
   }
   return { text: a.choice.replace(/_/g, " "), value: a.confidence, fired: false, kind: "choice" };
 }
