@@ -7,6 +7,10 @@
 </p>
 
 <p align="center">
+  <a href="https://shouldijev.vercel.app"><strong>Try it live → shouldijev.vercel.app</strong></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/yakubmurcek/should-i-jev/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/yakubmurcek/should-i-jev/actions/workflows/ci.yml/badge.svg" /></a>
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" />
   <img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-black.svg" />
