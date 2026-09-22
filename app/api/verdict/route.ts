@@ -3,7 +3,7 @@ import { JevError, MODEL, askJev } from "@/lib/jev/client";
 import { QUESTIONS, QUESTION_IDS } from "@/lib/questions";
 import { MAX_DESCRIPTION_CHARS, MIN_DESCRIPTION_CHARS, buildState } from "@/lib/state";
 import { MissingAnswerError, composeVerdict } from "@/lib/compose";
-import { RATE_LIMIT, checkRateLimit, getVerdict, putVerdict, verdictId } from "@/lib/store";
+import { RATE_LIMIT, checkDailyCap, checkRateLimit, getVerdict, putVerdict, verdictId } from "@/lib/store";
 import type { VerdictRecord } from "@/lib/verdict";
 
 export const runtime = "nodejs";
@@ -70,6 +70,16 @@ export async function POST(req: Request) {
     );
   }
 
+  const daily = await checkDailyCap();
+  if (!daily.ok) {
+    return fail(
+      429,
+      "rate_limited",
+      "The tool has hit its daily limit of new verdicts.",
+      "It resets at midnight UTC. Verdicts already made, including shared links, still open.",
+    );
+  }
+
   const state = buildState(description.trim());
 
   // ONE request, nineteen questions, one subject. They are evaluated in parallel,
@@ -95,7 +105,7 @@ export async function POST(req: Request) {
           "TypeSafe is under load and turned the request away. Your description is safe, nothing was judged.",
         );
       }
-      return fail(502, "upstream", "Jev turned that request away.", err.message.slice(0, 160));
+      return fail(502, "upstream", "Jev turned that request away.");
     }
     throw err;
   }
