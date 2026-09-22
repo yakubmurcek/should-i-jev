@@ -1,18 +1,52 @@
-# ShouldIJev
+<h1 align="center">Should I Jev?</h1>
 
-A single-page tool. Describe a feature in one box, submit once, get a verdict on
-what should power it — plain code, Jev, an LLM, Jev + LLM, classical ML, or
-"not enough to judge".
+<p align="center">
+  Describe a feature in one box. Get a verdict on what should actually power it —
+  <br />
+  plain code, <a href="https://typesafe.ai">Jev</a>, an LLM, Jev + LLM, classical ML, or "not enough to judge".
+</p>
 
-It is deliberately willing to say no. A recommender that always recommends Jev
-is worthless to a developer.
+<p align="center">
+  <a href="https://github.com/yakubmurcek/should-i-jev/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/yakubmurcek/should-i-jev/actions/workflows/ci.yml/badge.svg" /></a>
+  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" />
+  <img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-black.svg" />
+  <img alt="model jev-1.13.0" src="https://img.shields.io/badge/model-jev--1.13.0-a3e635.svg" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/02-verdict-full.png" alt="Nineteen typed judgments resolving into a 'Jev fits' verdict for support-email routing" width="820" />
+</p>
+
+## It is willing to say no
+
+A recommender that always recommends Jev is worthless to a developer. "Just
+write code" is a real answer here, and the most common one.
+
+<p align="center">
+  <img src="docs/screenshots/03-says-no.png" alt="The same tool answering 'Just write code' for a country-code to currency lookup" width="820" />
+</p>
 
 TypeSafe publishes what Jev is good at, and — on a page absent from `llms.txt` —
 what it is bad at. Both halves exist as prose, and nobody runs them against
 *your* feature. That is the product: **an executable reading of TypeSafe's own
 jaggedness list, applied to a described idea.**
 
-The full design is `docs/superpowers/specs/2026-09-20-jev-fit-design.md`.
+## Run it
+
+```bash
+git clone https://github.com/yakubmurcek/should-i-jev.git
+cd should-i-jev
+npm install
+cp .env.example .env.local   # add TYPESAFE_API_KEY
+npm run dev                  # http://localhost:3000
+```
+
+A key is only needed to produce a *new* verdict — the entire test suite runs
+offline. Permalinks work without KV configured; the dev fallback store is shared
+across module instances on purpose, because Next gives route handlers and server
+components separate ones and a plain module-scope Map 404s every `/v/<hash>`.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyakubmurcek%2Fshould-i-jev&env=TYPESAFE_API_KEY&envDescription=Your%20TypeSafe%20API%20key%2C%20server-side%20only)
 
 ## How it works
 
@@ -45,6 +79,19 @@ Two rules the code holds to throughout:
 - **Every weight and threshold is a named constant in code.** Retuning one must
   never require a new Jev call.
 
+Nothing is hidden. Every verdict ships the exact state sent, every question
+asked, and every answer returned:
+
+<p align="center">
+  <img src="docs/screenshots/05-show-your-work.png" alt="The 'Show your work' panel, displaying the raw state and questions sent to Jev" width="820" />
+</p>
+
+Shared links carry a rendered card with the real judgments on it:
+
+<p align="center">
+  <img src="docs/screenshots/04-share-card.png" alt="The generated share card for a 'Just write code' verdict" width="640" />
+</p>
+
 ## Layout
 
 | path | what |
@@ -61,17 +108,8 @@ Two rules the code holds to throughout:
 | `components/VerdictDetails.tsx` | deciding judgments, assumptions, what would change it |
 | `components/og.tsx` | the share card, rendered to PNG by Satori |
 
-## Running it
-
-```bash
-npm install
-cp .env.example .env.local   # add TYPESAFE_API_KEY
-npm run dev                  # http://localhost:3000
-```
-
-Permalinks work without KV configured — the dev fallback store is shared across
-module instances on purpose, because Next gives route handlers and server
-components separate ones and a plain module-scope Map 404s every `/v/<hash>`.
+The full design is
+[`docs/superpowers/specs/2026-09-20-jev-fit-design.md`](docs/superpowers/specs/2026-09-20-jev-fit-design.md).
 
 ## Tests
 
@@ -93,7 +131,7 @@ thresholds can be retuned and re-verified without spending a token.
 disagrees with the hand-authored one, that is a finding to examine, not a test to
 relax.
 
-### What the first recording found
+## What recording real answers found
 
 Run against live `jev-1.13.0`, the hand-authored expectations matched **6 of 27**.
 Three defects came out of that, all fixed here:
@@ -120,7 +158,7 @@ descriptions — withheld verdicts its own resolution could not have altered.
 
 After the fixes: **14 of 28**.
 
-### Audited against TypeSafe's own docs
+## Audited against TypeSafe's own docs
 
 Read against `concepts/state`, `primitives/noul`, `confidence`, `patterns/fan-out`
 and the `parallel_questions` cookbook. What the audit changed:
@@ -151,7 +189,7 @@ and the `parallel_questions` cookbook. What the audit changed:
   "Jev fits" on a prose output if depth and volume were high enough. Jev does not
   return prose at all, so no weighting rescues it.
 
-Seventeen questions, 2,872 input tokens per request (+2.4% for the two added
+Nineteen questions, 2,872 input tokens per request (+2.4% for the two added
 questions), one request per verdict, cached by content hash.
 
 ### `untrusted_input` is not a veto
@@ -168,11 +206,12 @@ Agreement between recorded answers and the hand-authored expectations, in order:
 **6/27 -> 14/28 -> 19/28 -> 27/28.** The one standing divergence is
 `floor-uncertain-veto`, whose description now draws a confident answer from the
 real model, so it no longer exercises the uncertain-veto branch live; the offline
-unit tests still cover that branch directly. The remaining gap is not the system disagreeing with
-itself; it is fixture descriptions that trip vetoes I did not intend (an insurance
-example that says "incident date" fires `needs_temporal_reasoning` at 0.91) plus
-threshold tuning against real answers, which is open question 4 in the spec. Those
-are the next session's work, and `scripts/compare-recorded.ts` is how to see them.
+unit tests still cover that branch directly. The remaining gap is not the system
+disagreeing with itself; it is fixture descriptions that trip vetoes I did not
+intend (an insurance example that says "incident date" fires
+`needs_temporal_reasoning` at 0.91) plus threshold tuning against real answers,
+which is open question 4 in the spec. Those are the next session's work, and
+`scripts/compare-recorded.ts` is how to see them.
 
 ## When TypeSafe is busy
 
@@ -203,6 +242,12 @@ as an explicit judgment is a v1 candidate, not a v0 promise.
 **No cost claims.** TypeSafe publishes no pricing page, so this tool states no
 numbers — only relative statements where they are true.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). The short version: never move a decision
+out of `lib/compose.ts` and into a question, and re-record the fixtures when you
+change what gets asked.
+
 ## License
 
-MIT. See `LICENSE`.
+MIT. See [LICENSE](LICENSE).

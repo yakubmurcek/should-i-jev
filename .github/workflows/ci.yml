@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Offline: 27 golden fixtures plus card rendering. No TYPESAFE_API_KEY, no
+      # tokens spent. The live contract test is skipped without JEV_LIVE=1.
+      - run: npm test
+      - run: npm run build
