@@ -14,7 +14,7 @@ import { BLOCKING, GROUPS, TILE_LABEL } from "@/components/verdict-meta";
 
 type Reading = { text: string; value: number; fired: boolean; kind: "noul" | "choice" | "score" };
 
-function read(id: string, a: Answer): Reading {
+export function read(id: string, a: Answer): Reading {
   if (a.type === "noul") {
     const fired = a.noul >= 0.6;
     return {

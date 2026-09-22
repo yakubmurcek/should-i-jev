@@ -2,12 +2,17 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { Verdict } from "@/lib/verdict";
-import { VERDICT_COLOR, VERDICT_GIST } from "@/components/verdict-meta";
+import type { Answer } from "@/lib/jev/types";
+import { read } from "@/components/JudgmentGrid";
+import { TILE_LABEL, VERDICT_COLOR, VERDICT_GIST } from "@/components/verdict-meta";
 
 /** The answer, readable in about two seconds. Everything else is below it. */
-export default function VerdictBanner({ verdict }: { verdict: Verdict }) {
+export default function VerdictBanner({ verdict, answers = {} }: { verdict: Verdict; answers?: Record<string, Answer> }) {
   const reduce = useReducedMotion();
   const color = VERDICT_COLOR[verdict.kind];
+  // The two or three answers that moved it most, so "why" is visible without
+  // opening anything.
+  const top = [...verdict.deciding].sort((a, b) => b.weight - a.weight).slice(0, 3);
 
   return (
     <motion.div
@@ -32,6 +37,27 @@ export default function VerdictBanner({ verdict }: { verdict: Verdict }) {
         <p className="max-w-[48ch] text-lg text-[var(--text)] sm:text-xl">
           {VERDICT_GIST[verdict.kind]}
         </p>
+        <p className="max-w-[68ch] text-[15px] leading-relaxed text-[var(--dim)]">
+          {verdict.why.charAt(0).toUpperCase() + verdict.why.slice(1)}.
+        </p>
+
+        {top.length > 0 && (
+          <ul className="mt-2 flex flex-wrap gap-2" aria-label="What decided it">
+            {top.map((d) => (
+              <li
+                key={d.id}
+                className="flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--bg)]/60 px-3 py-1 text-[13px]"
+              >
+                <span className="text-[var(--dim)]">{TILE_LABEL[d.id] ?? d.id}</span>
+                {answers[d.id] && (
+                  <span className="font-[family-name:var(--font-mono)]" style={{ color }}>
+                    {read(d.id, answers[d.id]!).text}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
 
         {verdict.provisional && (
           <p

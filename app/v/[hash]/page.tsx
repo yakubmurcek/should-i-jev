@@ -25,15 +25,17 @@ export default async function VerdictPage({ params }: { params: Promise<{ hash: 
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
-      <header className="flex flex-col gap-4">
+      <header className="flex flex-col gap-3">
         <Link
           href="/"
-          className="w-fit text-[13px] text-[var(--faint)] transition hover:text-[var(--accent)]"
+          className="flex w-fit items-center gap-2 text-[13px] font-medium tracking-wide text-[var(--dim)] transition hover:text-[var(--accent)]"
         >
+          <span className="h-2 w-2 rounded-full bg-[var(--accent)] shadow-[0_0_12px_var(--accent)]" />
           Should I Jev?
         </Link>
-        <p className="max-w-[60ch] text-xl leading-relaxed text-[var(--text)] sm:text-2xl">
-          {record.description}
+        <p className="max-w-[60ch] text-lg leading-relaxed text-[var(--dim)] sm:text-xl">
+          Does this feature actually need an LLM? Here is the verdict and the nineteen checks behind
+          it. Edit the description to judge your own.
         </p>
       </header>
 

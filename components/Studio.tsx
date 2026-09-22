@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Link as LinkIcon, XLogo } from "@phosphor-icons/react";
 import type { VerdictRecord } from "@/lib/verdict";
@@ -10,6 +10,7 @@ import JudgmentGrid from "@/components/JudgmentGrid";
 import VerdictBanner from "@/components/VerdictBanner";
 import SharpenPanel from "@/components/SharpenPanel";
 import VerdictDetails from "@/components/VerdictDetails";
+import NextStep from "@/components/NextStep";
 
 type Phase = "idle" | "running" | "done" | "error";
 
@@ -33,6 +34,10 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
   const boxRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
+  // Set after mount: reading window during render makes the server and client
+  // disagree on the share href, which is a hydration mismatch on every permalink.
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
 
   const tooShort = text.trim().length < MIN_DESCRIPTION_CHARS;
   const over = text.length > MAX_DESCRIPTION_CHARS;
@@ -231,32 +236,13 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               animate={{ opacity: 1 }}
               className="flex flex-col gap-8"
             >
-              {phase === "done" && record && <VerdictBanner verdict={record.verdict} />}
-
-              {phase === "done" && record && record.verdict.gaps.length > 0 && (
-                <SharpenPanel
-                  gaps={record.verdict.gaps}
-                  sharpness={record.verdict.sharpness}
-                  onAdd={addPhrase}
-                />
-              )}
-
-              <div className="flex flex-col gap-4">
-                <p className="text-[13px] text-[var(--faint)]">
-                  {phase === "running"
-                    ? "Nineteen judgments, one request, all evaluated in parallel."
-                    : "Nineteen judgments, one request. Code composed the verdict from these, it was never asked for directly."}
-                </p>
-                <JudgmentGrid answers={record?.work.answers} pending={phase === "running"} />
-              </div>
-
               {phase === "done" && record && (
-                <>
-                  <VerdictDetails record={record} />
+                <div className="flex flex-col gap-3">
+                  <VerdictBanner verdict={record.verdict} answers={record.work.answers} />
                   <div className="flex flex-wrap items-center gap-2">
                     <a
                       href={`https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(
-                        typeof window !== "undefined" ? `${window.location.origin}/v/${record.id}` : "",
+                        `${origin}/v/${record.id}`,
                       )}`}
                       target="_blank"
                       rel="noreferrer"
@@ -274,7 +260,37 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
                       {copied ? "Copied" : "Copy link"}
                     </button>
                   </div>
-                </>
+                </div>
+              )}
+
+              {phase === "done" && record && record.verdict.kind !== "not_enough_to_judge" && (
+                <NextStep record={record} />
+              )}
+
+              {phase === "done" && record && record.verdict.gaps.length > 0 && (
+                <SharpenPanel
+                  gaps={record.verdict.gaps}
+                  sharpness={record.verdict.sharpness}
+                  onAdd={addPhrase}
+                />
+              )}
+
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-lg font-medium tracking-tight">
+                    {phase === "running" ? "Asking nineteen questions at once" : "The nineteen checks behind it"}
+                  </h3>
+                  <p className="text-[13px] text-[var(--faint)]">
+                    {phase === "running"
+                      ? "One request to Jev, every question evaluated in parallel. Usually a few seconds."
+                      : "One request. Code composed the verdict from these answers. Jev was never asked for it directly."}
+                  </p>
+                </div>
+                <JudgmentGrid answers={record?.work.answers} pending={phase === "running"} />
+              </div>
+
+              {phase === "done" && record && (
+                <VerdictDetails record={record} />
               )}
             </motion.div>
           )}
