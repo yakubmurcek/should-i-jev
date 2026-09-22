@@ -24,12 +24,16 @@ answers are narrow and `lib/compose.ts` composes the verdict from them:
 
 1. **Specificity gate** — a subject area is not a decision. Stop.
 2. **Seven vetoes**, before any weighting. A strong fit score cannot outvote
-   "Jev cannot generate text".
+   "Jev cannot generate text". A veto rules Jev out; it does not rule code in.
+   When it fired on a quantity and you already have labelled outcomes at
+   volume, the fallback is a trained model, not an `if`.
 3. **Composite** over banded answers and score levels.
 4. **Consequence adjustment** — high consequence does not change the verdict, it
    raises the bar required to state it.
-5. **Floor check on consumed answers only** — uncertainty on a branch nobody
-   took is not a reason to withhold a verdict.
+5. **Floor check on consumed answers only, and only where it matters** —
+   uncertainty on a branch nobody took is not a reason to withhold a verdict,
+   and neither is uncertainty whose plausible resolutions all rule the same
+   way. Options carrying under 10 % of the mass are rounding, not alternatives.
 
 Two rules the code holds to throughout:
 

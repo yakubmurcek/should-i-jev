@@ -4,6 +4,7 @@ import {
   ASSUMED_BELOW,
   FLOOR,
   HIGH_CONSEQUENCE_ACT,
+  PLAUSIBLE_MASS,
   bandNoul,
   certaintyOf,
   isChoice,
@@ -112,6 +113,24 @@ const VETO_VERDICT: Record<VetoId, VerdictKind> = {
   needs_multihop_reasoning: "use_an_llm",
   needs_generation: "use_an_llm",
 };
+
+/**
+ * Vetoes whose fallback is not automatically "write the rule".
+ *
+ * A veto says Jev is disqualified; it does not say what to reach for instead,
+ * and the table above assumes that is always code or an LLM. For these two it
+ * often is not. Both fire because the deciding signal is a QUANTITY Jev cannot
+ * read — a date, a magnitude — and a quantity you have labelled outcomes for,
+ * at volume, is the thing a trained model is best at. Measured need: "predict
+ * whether a trial user converts, we have three years of labelled outcomes"
+ * fired the temporal veto and was told to just write code.
+ *
+ * `deterministic_rule_exists` and `needs_arithmetic` stay out on purpose: both
+ * mean the answer is exactly computable, and a learned approximation of an
+ * exact rule is strictly worse. `needs_multihop_reasoning` and
+ * `needs_generation` stay out because labels do not buy reasoning or prose.
+ */
+const VETO_MAY_BE_ML: VetoId[] = ["needs_temporal_reasoning", "needs_numeric_comparison"];
 
 const VETO_WHY: Record<VetoId, string> = {
   deterministic_rule_exists:
@@ -294,11 +313,25 @@ function require_<T extends Answer>(
   return a;
 }
 
-/** Pins an uncertain answer to each definite reading it could resolve to. */
+/**
+ * Pins an uncertain answer to each definite reading it could PLAUSIBLY resolve
+ * to. Options and levels carrying less than `PLAUSIBLE_MASS` are not readings
+ * the description supports; they are the tail Jev leaves on everything, and
+ * treating them as live alternatives withholds verdicts the mass agrees on.
+ *
+ * The top option always survives, so an answer always has something to probe.
+ */
+function plausible(probabilities: Record<string, number>): string[] {
+  const entries = Object.entries(probabilities);
+  const top = entries.reduce((a, b) => (b[1] > a[1] ? b : a), entries[0]!);
+  const kept = entries.filter(([, p]) => p >= PLAUSIBLE_MASS).map(([k]) => k);
+  return kept.length > 0 ? kept : [top[0]];
+}
+
 function extremesOf(a: Answer): Answer[] {
   if (a.type === "noul") return [{ ...a, noul: 0.95 }, { ...a, noul: 0.05 }];
   if (a.type === "score") {
-    const levels = Object.keys(a.probabilities).map(Number).sort((x, y) => x - y);
+    const levels = plausible(a.probabilities).map(Number).sort((x, y) => x - y);
     const lo = levels[0] ?? 0;
     const hi = levels[levels.length - 1] ?? lo;
     return [lo, hi].map((lvl) => ({
@@ -308,7 +341,7 @@ function extremesOf(a: Answer): Answer[] {
       probabilities: { [String(lvl)]: 0.95 },
     }));
   }
-  return Object.keys(a.probabilities).map((opt) => ({
+  return plausible(a.probabilities).map((opt) => ({
     ...a,
     choice: opt,
     confidence: 0.95,
@@ -380,6 +413,31 @@ export function composeVerdict(
     const winner = blocking[0]!; // VETO_PRECEDENCE order is preserved
     consume(ctx, winner, "yes", 1);
     for (const other of blocking.slice(1)) consume(ctx, other, "yes", 0.5);
+
+    // Jev is out, but that does not settle what to use instead. When the veto
+    // fired on a quantity and you already have labelled outcomes at volume,
+    // the answer is a trained model, not an if.
+    const labelled = require_(answers, "labelled_outcomes_exist", isNoul);
+    const volumeNow = require_(answers, "repeated_at_volume", isNoul);
+    if (
+      VETO_MAY_BE_ML.includes(winner) &&
+      bandNoul(labelled.noul) === "fires" &&
+      bandNoul(volumeNow.noul) === "fires"
+    ) {
+      consume(ctx, "labelled_outcomes_exist", "yes", 0.9);
+      consume(ctx, "repeated_at_volume", "yes", 0.6);
+      return finish(ctx, {
+        specificityLevel,
+        kind: "classical_ml",
+        why: `${VETO_WHY[winner]} — but you have labelled outcomes at volume, and a model trained on them reads exactly the quantity a typed judgment cannot`,
+        whatWouldChangeThis:
+          "What would change this: the labels. Without outcomes already recorded there is nothing to train on, and this falls back to computing it in code.",
+        modelVersion,
+        fitScore: null,
+        provisional: false,
+      });
+    }
+
     return finish(ctx, {
       specificityLevel,
       kind: VETO_VERDICT[winner],
@@ -596,9 +654,14 @@ function finish(ctx: Ctx, draft: Draft): Verdict {
     (min, d) => Math.min(min, d.certainty),
     Number.POSITIVE_INFINITY,
   );
+  // No `weakest >= FLOOR` guard here. That used to be a proxy for "nothing is
+  // below the floor", which the check above guaranteed by returning early. It
+  // no longer does: an immaterial below-floor answer now passes through, and
+  // reading that as "too uncertain to even be provisional" stated a harassment
+  // call on public text as settled. Anything below the floor that reaches this
+  // line has already been judged immaterial, so it cannot block the caveat.
   const provisional =
     draft.consequenceFires === true &&
-    weakest >= FLOOR &&
     // Public text plus a material cost is never stated as settled, however
     // concentrated the answers are: confidence measures the model's certainty,
     // not whether somebody wrote the input to steer it.
