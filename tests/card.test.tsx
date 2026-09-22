@@ -90,6 +90,26 @@ describe("the share card", () => {
     }
   });
 
+  it("names a score against its whole scale, not the levels that kept mass", () => {
+    // semantic_depth has four levels, and a confident answer leaves two of them
+    // with no probability at all. Reading the scale off `probabilities` shrank
+    // it, so a level-1 answer showed as "1 of 2" on a four-level question.
+    const record = recordFor(FIXTURES.find((f) => f.id === "ml-high-volume-shallow")!);
+    const html = renderToStaticMarkup(<VerdictCardImage record={record} />);
+    expect(html).toContain("2 of 4");
+    expect(html).not.toContain("1 of 2");
+  });
+
+  it("names every output shape short enough to survive its cell", () => {
+    for (const f of FIXTURES) {
+      const shape = f.answers.output_shape;
+      if (shape?.type !== "choice") continue;
+      const html = renderToStaticMarkup(<VerdictCardImage record={recordFor(f)} />);
+      // A clipped reading ("action with...") is not a reading.
+      expect(html).not.toContain("with...");
+    }
+  });
+
   it("cuts long text at a word boundary, never mid-word", () => {
     const text = "Flagged marketplace listings need a severity level assigned from the body";
     const cut = clamp(text, 40);

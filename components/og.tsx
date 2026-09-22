@@ -43,14 +43,32 @@ const STRIP: [string, string][] = [
   ["untrusted_input", "public text"],
 ];
 
+/**
+ * A strip cell fits about thirteen characters, and `action_with_parameters`
+ * spelled out clips to "action with...". The only choice question in the strip
+ * is output_shape, so its options get card-length names.
+ */
+const SHORT_CHOICE: Record<string, string> = {
+  closed_set: "closed set",
+  free_prose: "prose",
+  degree_or_number: "a number",
+  structured_record: "fields",
+  action_with_parameters: "an action",
+  unclear: "unclear",
+};
+
 function reading(a: Answer | undefined): string {
   if (!a) return "-";
   if (a.type === "noul") return a.noul >= 0.6 ? "yes" : a.noul <= 0.4 ? "no" : "either way";
   if (a.type === "score") {
-    const levels = Object.keys(a.probabilities).map(Number);
-    return `${Math.round(a.score)} of ${Math.max(...levels, Math.round(a.score))}`;
+    // The scale comes from the legend, which always carries every level. The
+    // probabilities do not: a real answer drops levels with negligible mass,
+    // which read as a shrinking scale ("1 of 2" on a four-level question).
+    // Levels are zero-indexed, so a reader sees level + 1.
+    const levels = Object.keys(a.legend).length;
+    return `${Math.round(a.score) + 1} of ${levels}`;
   }
-  return a.choice.replace(/_/g, " ");
+  return SHORT_CHOICE[a.choice] ?? a.choice.replace(/_/g, " ");
 }
 
 /** Cuts at a word boundary, so a shared card never ends mid-word. */
