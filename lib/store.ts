@@ -107,3 +107,28 @@ export async function checkRateLimit(
     resetInSeconds,
   };
 }
+
+/**
+ * The spend ceiling. The per-IP limit stops one visitor; it does nothing
+ * against many addresses, or small edits that dodge the cache. This counter is
+ * global, so the worst day costs at most DAILY_CAP inferences no matter who is
+ * calling. At roughly 3.5k input tokens per verdict, 1500 a day is well under a
+ * dollar.
+ */
+export const DAILY_CAP = Number(process.env.DAILY_VERDICT_CAP) || 1500;
+
+export async function checkDailyCap(): Promise<{ ok: boolean }> {
+  const day = new Date().toISOString().slice(0, 10);
+  const key = `daily:${day}`;
+  const kv = client();
+
+  let count: number;
+  if (!kv) {
+    count = (memGet<number>(key) ?? 0) + 1;
+    memory.set(key, { value: count, expires: Date.now() + 60 * 60 * 26 * 1000 });
+  } else {
+    count = await kv.incr(key);
+    if (count === 1) await kv.expire(key, 60 * 60 * 26);
+  }
+  return { ok: count <= DAILY_CAP };
+}

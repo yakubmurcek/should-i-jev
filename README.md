@@ -105,7 +105,7 @@ Shared links carry a rendered card with the real judgments on it:
 | `lib/bands.ts` | banding and the confidence floors |
 | `lib/compose.ts` | the verdict, owned by code |
 | `lib/jev/client.ts` | one request, retry on 429/529/5xx, terminal on 401/422 |
-| `app/api/verdict/route.ts` | rate limit, length cap, cache, compose |
+| `app/api/verdict/route.ts` | per-IP limit, global daily cap, length cap, cache, compose |
 | `components/Studio.tsx` | the one-box surface: describe, submit, watch the judgments resolve |
 | `components/VerdictBanner.tsx` | the verdict headline and its gist |
 | `components/JudgmentGrid.tsx` | all nineteen answers, grouped |
