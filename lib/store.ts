@@ -112,8 +112,9 @@ export async function checkRateLimit(
  * The spend ceiling. The per-IP limit stops one visitor; it does nothing
  * against many addresses, or small edits that dodge the cache. This counter is
  * global, so the worst day costs at most DAILY_CAP inferences no matter who is
- * calling. At roughly 3.5k input tokens per verdict, 1500 a day is well under a
- * dollar.
+ * calling. The account is prepaid ($5 monthly credit, no card), so the real
+ * risk is an attacker draining it and taking the site down for the month. At
+ * the measured ~1.4k input tokens per verdict, 1500 a day is ~$2.70 a month.
  */
 export const DAILY_CAP = Number(process.env.DAILY_VERDICT_CAP) || 1500;
 
