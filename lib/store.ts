@@ -40,9 +40,9 @@ function client(): Redis | null {
  */
 type MemoryEntry = { value: unknown; expires: number };
 const globalMemory = globalThis as typeof globalThis & {
-  __jevFitMemory?: Map<string, MemoryEntry>;
+  __shouldIJevMemory?: Map<string, MemoryEntry>;
 };
-const memory = (globalMemory.__jevFitMemory ??= new Map<string, MemoryEntry>());
+const memory = (globalMemory.__shouldIJevMemory ??= new Map<string, MemoryEntry>());
 
 function memGet<T>(key: string): T | null {
   const hit = memory.get(key);

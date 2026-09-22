@@ -110,7 +110,7 @@ export function VerdictCardImage({ record }: { record: VerdictRecord }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
         <div style={{ display: "flex", fontSize: 21, color: FAINT, letterSpacing: 1 }}>
-          does it fit jev?
+          should i jev?
         </div>
         <div style={{ display: "flex", fontSize: 88, fontWeight: 700, color, letterSpacing: -2.5 }}>
           {record.verdict.headline}
@@ -182,7 +182,7 @@ export function DefaultCardImage() {
         }}
       />
       <div style={{ display: "flex", fontSize: 96, fontWeight: 700, color: TEXT, letterSpacing: -3 }}>
-        Does it fit Jev?
+        Should I Jev?
       </div>
       <div style={{ display: "flex", fontSize: 34, color: DIM, lineHeight: 1.4, maxWidth: 930 }}>
         Describe a feature. Watch 19 typed judgments resolve, and get a verdict on what should

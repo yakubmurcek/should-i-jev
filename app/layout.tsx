@@ -14,16 +14,16 @@ export const metadata: Metadata = {
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
         : "http://localhost:3000"),
   ),
-  title: "Does it fit Jev?",
+  title: "ShouldIJev",
   description:
     "Describe a feature. Watch nineteen typed judgments resolve, and get a verdict on what should actually power it. It says no.",
   openGraph: {
-    title: "Does it fit Jev?",
+    title: "ShouldIJev",
     description:
       "Describe a feature. Watch nineteen typed judgments resolve, and get a verdict on what should actually power it.",
     type: "website",
   },
-  twitter: { card: "summary_large_image", title: "Does it fit Jev?" },
+  twitter: { card: "summary_large_image", title: "ShouldIJev" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

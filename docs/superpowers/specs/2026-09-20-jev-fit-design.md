@@ -1,8 +1,10 @@
-# Jev-Fit — design spec
+# ShouldIJev — design spec
 
 **Date:** 2026-09-20
 **Status:** approved design, not yet implemented
-**Working name:** `jev-fit` (naming is open — see Open Questions)
+**Name:** ShouldIJev, written "Should I Jev?" wherever a visitor reads it.
+Drafted under the working name `jev-fit`, which survives only as the repo
+directory and as the internal term "Jev-fit score".
 
 ---
 
@@ -315,7 +317,7 @@ detection also lands here.
 1. **Model identifier.** Local notes record `jev-latest`; the jaggedness page is
    published as `jev-1.13`. The exact string the API accepts for a pinned version
    must be confirmed against `api.md` / `models.md` before implementation.
-2. **Name and domain.** `jev-fit` is a working title only.
+2. **Domain.** The name is settled (ShouldIJev); the domain is not bought yet.
 3. **Score level wording.** The `semantic_depth` and `description_specificity`
    levels must describe concrete situations and stand alone, per the Score
    primitive page. Drafting them is an implementation task.

@@ -1,4 +1,4 @@
-# jev-fit
+# ShouldIJev
 
 A single-page tool. Describe a feature in one box, submit once, get a verdict on
 what should power it — plain code, Jev, an LLM, Jev + LLM, classical ML, or

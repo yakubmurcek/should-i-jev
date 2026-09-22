@@ -5,7 +5,7 @@ export default function HomePage() {
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
       <header className="flex flex-col gap-4">
         <h1 className="max-w-[16ch] text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
-          Does it fit Jev?
+          Should I Jev?
         </h1>
         <p className="max-w-[54ch] text-lg leading-relaxed text-[var(--dim)] sm:text-xl">
           Jev returns typed judgments instead of prose, so it sits between an{" "}

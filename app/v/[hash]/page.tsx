@@ -8,7 +8,7 @@ export async function generateMetadata({ params }: { params: Promise<{ hash: str
   const { hash } = await params;
   const record = await getVerdict(hash);
   if (!record) return { title: "Verdict not found" };
-  const title = `${record.verdict.headline} · Does it fit Jev?`;
+  const title = `${record.verdict.headline} · ShouldIJev`;
   const description = `"${record.description.slice(0, 120)}", ${VERDICT_GIST[record.verdict.kind]}`;
   return {
     title,
@@ -30,7 +30,7 @@ export default async function VerdictPage({ params }: { params: Promise<{ hash: 
           href="/"
           className="w-fit text-[13px] text-[var(--faint)] transition hover:text-[var(--accent)]"
         >
-          Does it fit Jev?
+          Should I Jev?
         </Link>
         <p className="max-w-[60ch] text-xl leading-relaxed text-[var(--text)] sm:text-2xl">
           {record.description}
