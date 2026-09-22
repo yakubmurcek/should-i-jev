@@ -16,10 +16,10 @@ The full design is `docs/superpowers/specs/2026-09-20-jev-fit-design.md`.
 
 ## How it works
 
-One request to Jev carries fifteen questions about one subject, evaluated in
+One request to Jev carries nineteen questions about one subject, evaluated in
 parallel — the documented speculative fan-out pattern. **Jev is never asked
 which mechanism should power the feature.** Broad questions invite
-overconfidence and hide the signals code should weigh separately, so the fifteen
+overconfidence and hide the signals code should weigh separately, so the nineteen
 answers are narrow and `lib/compose.ts` composes the verdict from them:
 
 1. **Specificity gate** — a subject area is not a decision. Stop.
@@ -45,13 +45,17 @@ Two rules the code holds to throughout:
 
 | path | what |
 |---|---|
-| `lib/questions.ts` | the fifteen questions, with contrastive criteria |
+| `lib/questions.ts` | the nineteen questions, with contrastive criteria |
 | `lib/state.ts` | the state, kept small — irrelevant detail *reduces accuracy* |
 | `lib/bands.ts` | banding and the confidence floors |
 | `lib/compose.ts` | the verdict, owned by code |
 | `lib/jev/client.ts` | one request, retry on 429/529/5xx, terminal on 401/422 |
 | `app/api/verdict/route.ts` | rate limit, length cap, cache, compose |
-| `components/VerdictCard.tsx` | headline, why, deciding judgments, assumptions, what would change it, model version, show-your-work |
+| `components/Studio.tsx` | the one-box surface: describe, submit, watch the judgments resolve |
+| `components/VerdictBanner.tsx` | the verdict headline and its gist |
+| `components/JudgmentGrid.tsx` | all nineteen answers, grouped |
+| `components/VerdictDetails.tsx` | deciding judgments, assumptions, what would change it |
+| `components/og.tsx` | the share card, rendered to PNG by Satori |
 
 ## Running it
 
@@ -194,3 +198,7 @@ as an explicit judgment is a v1 candidate, not a v0 promise.
 
 **No cost claims.** TypeSafe publishes no pricing page, so this tool states no
 numbers — only relative statements where they are true.
+
+## License
+
+MIT. See `LICENSE`.
