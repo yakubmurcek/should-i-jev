@@ -14,16 +14,15 @@ export const metadata: Metadata = {
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
         : "http://localhost:3000"),
   ),
-  title: "ShouldIJev",
+  title: "Should I Jev?",
   description:
-    "Describe a feature. Watch nineteen typed judgments resolve, and get a verdict on what should actually power it. It says no.",
+    "Jev is TypeSafe's typed-judgment model. Describe a feature and find out if it's a Jev job, checked against the list of what Jev is bad at.",
   openGraph: {
-    title: "ShouldIJev",
-    description:
-      "Describe a feature. Watch nineteen typed judgments resolve, and get a verdict on what should actually power it.",
+    title: "Should I Jev?",
+    description: "Describe a feature and find out if it's a Jev job. It says so when it isn't.",
     type: "website",
   },
-  twitter: { card: "summary_large_image", title: "ShouldIJev" },
+  twitter: { card: "summary_large_image", title: "Should I Jev?", creator: "@ykbmck" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

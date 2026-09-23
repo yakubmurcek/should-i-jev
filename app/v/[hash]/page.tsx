@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: { params: Promise<{ hash: str
   const { hash } = await params;
   const record = await getVerdict(hash);
   if (!record) return { title: "Verdict not found" };
-  const title = `${record.verdict.headline} · ShouldIJev`;
+  const title = `${record.verdict.headline} · Should I Jev?`;
   const description = `"${record.description.slice(0, 120)}", ${VERDICT_GIST[record.verdict.kind]}`;
   return {
     title,
@@ -29,8 +29,8 @@ export default async function VerdictPage({ params }: { params: Promise<{ hash: 
       <header className="flex flex-col gap-5">
         <Masthead right={`verdict/${record.id}`} />
         <p className="max-w-[60ch] text-[17px] leading-relaxed text-[var(--dim)]">
-          Does this feature actually need an LLM? Here is the verdict and the nineteen checks behind
-          it. Edit the description to judge your own.
+          Is this a Jev job? Here is the verdict and the nineteen checks Jev ran on it. Edit the
+          description to check your own feature.
         </p>
       </header>
 

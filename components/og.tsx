@@ -160,9 +160,10 @@ export function VerdictCardImage({ record }: { record: VerdictRecord }) {
   );
 }
 
-function Footer({ provisional }: { provisional?: boolean }) {
+function Footer({ provisional, named = true }: { provisional?: boolean; named?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px" }}>
+      {named ? (
       <div
         style={{
           display: "flex",
@@ -177,6 +178,9 @@ function Footer({ provisional }: { provisional?: boolean }) {
       >
         should i jev?
       </div>
+      ) : (
+        <div style={{ display: "flex" }} />
+      )}
       <div style={{ display: "flex", fontSize: 22, color: DIM }}>
         {provisional ? "provisional · " : ""}19 checks, 1 request · by @ykbmck
       </div>
@@ -207,11 +211,8 @@ export function DefaultCardImage() {
       }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ display: "flex", fontSize: 92, fontWeight: 800, letterSpacing: -4, lineHeight: 1 }}>
-          Does your feature
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 22, fontSize: 92, fontWeight: 800, letterSpacing: -4, lineHeight: 1 }}>
-          actually need an
+        <div style={{ display: "flex", alignItems: "center", gap: 26, fontSize: 150, fontWeight: 800, letterSpacing: -7, lineHeight: 1 }}>
+          Should I
           <div
             style={{
               display: "flex",
@@ -222,8 +223,11 @@ export function DefaultCardImage() {
               transform: "rotate(-2deg)",
             }}
           >
-            LLM?
+            Jev?
           </div>
+        </div>
+        <div style={{ display: "flex", fontSize: 34, color: DIM, marginTop: 18, maxWidth: 1000 }}>
+          Is your feature a job for Jev, the typed-judgment model?
         </div>
       </div>
       <div style={{ display: "flex", gap: 14 }}>
@@ -245,7 +249,7 @@ export function DefaultCardImage() {
           </div>
         ))}
       </div>
-      <Footer />
+      <Footer named={false} />
     </div>
   );
 }

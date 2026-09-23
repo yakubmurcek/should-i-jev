@@ -132,7 +132,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
       {/* ---- Input ---- */}
       <div className="flex flex-col gap-3">
         <label htmlFor="feature" className="text-[15px] font-bold">
-          Your feature
+          Is your feature a Jev job?
         </label>
         <div className="relative rounded-2xl border-2 border-[var(--line)] bg-[var(--bg-lift)] transition focus-within:border-[var(--accent)] focus-within:shadow-[5px_5px_0_var(--accent)]">
           <textarea
@@ -144,7 +144,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
             }}
             id="feature"
             rows={3}
-            placeholder="A feature you are thinking about building. One decision, in a sentence or two."
+            placeholder="Describe one decision your feature makes, in a sentence or two. What goes in, what comes out."
             className="w-full resize-none bg-transparent px-4 py-4 text-base leading-relaxed text-[var(--text)] outline-none placeholder:text-[var(--faint)] focus-visible:outline-none sm:px-5 sm:text-lg"
           />
           <div className="flex items-center justify-between gap-3 border-t-2 border-[var(--line-soft)] py-2 pl-4 pr-2 sm:pl-5">
