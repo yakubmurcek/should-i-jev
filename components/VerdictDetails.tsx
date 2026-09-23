@@ -13,14 +13,14 @@ export default function VerdictDetails({ record }: { record: VerdictRecord }) {
   const toggle = (k: string) => setOpen(open === k ? null : k);
 
   const Row = ({ k, title, count, children }: { k: string; title: string; count?: number; children: React.ReactNode }) => (
-    <div className="border-b border-[var(--line)]">
+    <div className="border-b-2 border-[var(--line-soft)]">
       <button
         type="button"
         onClick={() => toggle(k)}
         aria-expanded={open === k}
         className="flex w-full items-center justify-between gap-3 py-3.5 text-left transition hover:text-[var(--text)]"
       >
-        <span className="text-[15px] text-[var(--text)]">{title}</span>
+        <span className="text-[16px] font-bold text-[var(--text)]">{title}</span>
         <span className="flex items-center gap-2 font-mono text-[13px] text-[var(--faint)]">
           {count !== undefined && <span>{count}</span>}
           <span className={`transition-transform ${open === k ? "rotate-45" : ""}`}>+</span>
@@ -31,7 +31,7 @@ export default function VerdictDetails({ record }: { record: VerdictRecord }) {
   );
 
   return (
-    <div className="flex flex-col border-t border-[var(--text)]">
+    <div className="flex flex-col border-t-2 border-[var(--line-soft)]">
       <Row k="why" title="Why, in full">
         <p className="max-w-[68ch]">{verdict.why}.</p>
         <p className="mt-3 max-w-[68ch] text-[var(--text)]">{verdict.whatWouldChangeThis}</p>
@@ -75,7 +75,7 @@ export default function VerdictDetails({ record }: { record: VerdictRecord }) {
           model <span className="font-mono text-[var(--text)]">{verdict.modelVersion}</span>.
           These weaknesses are specific to that version.
         </p>
-        <pre className="max-h-[28rem] overflow-auto border border-[var(--line)] bg-[var(--bg-lift)] p-4 font-mono text-[12px] leading-relaxed text-[var(--dim)]">
+        <pre className="max-h-[28rem] overflow-auto rounded-2xl border-2 border-[var(--line-soft)] bg-[var(--bg-lift)] p-4 font-mono text-[12px] leading-relaxed text-[var(--dim)]">
 {JSON.stringify({ state: work.state, questions: work.questions, answers: work.answers }, null, 2)}
         </pre>
       </Row>

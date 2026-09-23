@@ -75,7 +75,7 @@ describe("the share card", () => {
 
   it("falls back to the product card when a verdict has expired", () => {
     const html = renderToStaticMarkup(<DefaultCardImage />);
-    expect(html).toContain("Should I Jev?");
+    expect(html).toMatch(/should i jev\?/i);
   });
 
   it("gives every outcome its own colour, so a feed is legible", () => {

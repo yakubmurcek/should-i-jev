@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Masthead from "@/components/Masthead";
+import MadeBy from "@/components/MadeBy";
 import Studio from "@/components/Studio";
 import { getVerdict } from "@/lib/store";
 import { VERDICT_GIST } from "@/components/verdict-meta";
@@ -24,9 +25,9 @@ export default async function VerdictPage({ params }: { params: Promise<{ hash: 
   if (!record) notFound();
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-24 pt-6 sm:px-6 sm:pt-10">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <header className="flex flex-col gap-5">
-        <Masthead right={`Verdict ${record.id}`} />
+        <Masthead right={`verdict/${record.id}`} />
         <p className="max-w-[60ch] text-[17px] leading-relaxed text-[var(--dim)]">
           Does this feature actually need an LLM? Here is the verdict and the nineteen checks behind
           it. Edit the description to judge your own.
@@ -34,6 +35,8 @@ export default async function VerdictPage({ params }: { params: Promise<{ hash: 
       </header>
 
       <Studio initial={record} />
+
+      <MadeBy />
     </main>
   );
 }

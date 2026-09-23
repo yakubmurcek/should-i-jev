@@ -3,22 +3,39 @@ import type { Answer } from "@/lib/jev/types";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
-const BG = "#f2efe6";
-const LIFT = "#faf8f2";
-const LINE = "#d4cdbc";
-const TEXT = "#1b1915";
-const DIM = "#58534a";
-const FAINT = "#8a8375";
-const ACCENT = "#c43d23";
+/**
+ * The site's own face, so a shared card matches the page. Satori only reads
+ * static TTF/WOFF (not woff2, not variable fonts), hence the two files.
+ * Traced into the og routes by next.config.mjs.
+ */
+export async function ogFonts() {
+  const { readFile } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const dir = join(process.cwd(), "assets/fonts");
+  const [regular, heavy] = await Promise.all([
+    readFile(join(dir, "bricolage-500.woff")),
+    readFile(join(dir, "bricolage-800.woff")),
+  ]);
+  return [
+    { name: "Bricolage", data: regular, weight: 500 as const, style: "normal" as const },
+    { name: "Bricolage", data: heavy, weight: 800 as const, style: "normal" as const },
+  ];
+}
+
+const BG = "#0f0f0f";
+const TEXT = "#f6f2e9";
+const DIM = "#aaa59b";
+const INK = "#0f0f0f";
+const ACCENT = "#ffd23f";
 
 /** Same six semantic colours as the app, inlined: Satori cannot read CSS vars. */
 export const OG_COLOR: Record<VerdictKind, string> = {
-  jev_fits: "#2f7a3c",
-  just_write_code: "#1f5c96",
-  use_an_llm: "#a86408",
-  jev_plus_llm: "#6a47a8",
-  classical_ml: "#b0354f",
-  not_enough_to_judge: "#7a7466",
+  jev_fits: "#3ddc84",
+  just_write_code: "#5aa9ff",
+  use_an_llm: "#ff9a3c",
+  jev_plus_llm: "#b08cff",
+  classical_ml: "#ff5f8f",
+  not_enough_to_judge: "#c9c4b8",
 };
 
 const GIST: Record<VerdictKind, string> = {
@@ -80,7 +97,7 @@ export function clamp(s: string, n: number): string {
   return `${(lastSpace > n * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}...`;
 }
 
-/** The per-verdict share card. */
+/** The per-verdict share card: the verdict as one solid block of its colour, so it stops a feed. */
 export function VerdictCardImage({ record }: { record: VerdictRecord }) {
   const color = OG_COLOR[record.verdict.kind];
 
@@ -91,33 +108,33 @@ export function VerdictCardImage({ record }: { record: VerdictRecord }) {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
+        gap: 20,
         background: BG,
-        padding: "56px 64px",
-        fontFamily: "sans-serif",
+        padding: 36,
+        fontFamily: "Bricolage",
       }}
     >
-      {/* A rule in the verdict colour, so the six outcomes are distinguishable in a feed. */}
       <div
-        style={{ position: "absolute", top: 0, left: 0, width: OG_SIZE.width, height: 12, background: color }}
-      />
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-        <div style={{ display: "flex", fontSize: 19, color: TEXT, letterSpacing: 3, borderBottom: `2px solid ${TEXT}`, paddingBottom: 10 }}>
-          SHOULD I JEV? · VERDICT
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          flex: 1,
+          background: color,
+          borderRadius: 36,
+          padding: "40px 48px",
+          color: INK,
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", fontSize: 120, fontWeight: 800, letterSpacing: -5, lineHeight: 1 }}>
+            {record.verdict.headline}
+          </div>
+          <div style={{ display: "flex", fontSize: 38, fontWeight: 800 }}>{GIST[record.verdict.kind]}</div>
+          <div style={{ display: "flex", fontSize: 25, lineHeight: 1.4, maxWidth: 1000, opacity: 0.72 }}>
+            {clamp(record.description, 130)}
+          </div>
         </div>
-        <div style={{ display: "flex", fontSize: 92, fontFamily: "serif", color, letterSpacing: -1.5 }}>
-          {record.verdict.headline}
-        </div>
-        <div style={{ display: "flex", fontSize: 33, color: TEXT }}>
-          {GIST[record.verdict.kind]}
-        </div>
-        <div style={{ display: "flex", fontSize: 25, color: DIM, lineHeight: 1.45, maxWidth: 1000 }}>
-          {clamp(record.description, 150)}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <div style={{ display: "flex", gap: 10 }}>
           {STRIP.map(([id, label]) => (
             <div
@@ -125,24 +142,43 @@ export function VerdictCardImage({ record }: { record: VerdictRecord }) {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 7,
+                gap: 5,
                 flex: 1,
-                background: LIFT,
-                border: `1px solid ${LINE}`,
-                padding: "12px 14px",
+                background: INK,
+                borderRadius: 16,
+                padding: "11px 14px",
               }}
             >
-              <div style={{ display: "flex", fontSize: 16, color: FAINT }}>{label}</div>
-              <div style={{ display: "flex", fontSize: 21, color: TEXT }}>
-                {clamp(reading(record.work.answers[id]), 13)}
-              </div>
+              <div style={{ display: "flex", fontSize: 15, color: DIM }}>{label}</div>
+              <div style={{ display: "flex", fontSize: 21, color }}>{clamp(reading(record.work.answers[id]), 13)}</div>
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", fontSize: 18, color: FAINT }}>
-          19 typed judgments, one request, composed in code
-          {record.verdict.provisional ? " · stated as provisional" : ""}
-        </div>
+      </div>
+      <Footer provisional={record.verdict.provisional} />
+    </div>
+  );
+}
+
+function Footer({ provisional }: { provisional?: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px" }}>
+      <div
+        style={{
+          display: "flex",
+          background: ACCENT,
+          color: INK,
+          fontSize: 24,
+          fontWeight: 800,
+          borderRadius: 10,
+          padding: "4px 12px",
+          transform: "rotate(-2deg)",
+        }}
+      >
+        should i jev?
+      </div>
+      <div style={{ display: "flex", fontSize: 22, color: DIM }}>
+        {provisional ? "provisional · " : ""}19 checks, 1 request · by @ykbmck
       </div>
     </div>
   );
@@ -150,6 +186,12 @@ export function VerdictCardImage({ record }: { record: VerdictRecord }) {
 
 /** The default card, for the home page and anything without a verdict. */
 export function DefaultCardImage() {
+  const kinds: [VerdictKind, string][] = [
+    ["just_write_code", "Just write code"],
+    ["classical_ml", "Classical ML"],
+    ["jev_fits", "Jev fits"],
+    ["use_an_llm", "Use an LLM"],
+  ];
   return (
     <div
       style={{
@@ -157,44 +199,53 @@ export function DefaultCardImage() {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
-        gap: 26,
+        justifyContent: "space-between",
         background: BG,
-        padding: "0 72px",
-        fontFamily: "sans-serif",
+        padding: "64px 72px 44px",
+        fontFamily: "Bricolage",
+        color: TEXT,
       }}
     >
-      <div
-        style={{ position: "absolute", top: 0, left: 0, width: OG_SIZE.width, height: 12, background: ACCENT }}
-      />
-      <div style={{ display: "flex", fontSize: 104, fontFamily: "serif", color: TEXT, letterSpacing: -2 }}>
-        Should I Jev?
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", fontSize: 92, fontWeight: 800, letterSpacing: -4, lineHeight: 1 }}>
+          Does your feature
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 22, fontSize: 92, fontWeight: 800, letterSpacing: -4, lineHeight: 1 }}>
+          actually need an
+          <div
+            style={{
+              display: "flex",
+              background: ACCENT,
+              color: INK,
+              borderRadius: 18,
+              padding: "0 18px 8px",
+              transform: "rotate(-2deg)",
+            }}
+          >
+            LLM?
+          </div>
+        </div>
       </div>
-      <div style={{ display: "flex", fontSize: 34, color: DIM, lineHeight: 1.4, maxWidth: 930 }}>
-        Describe a feature. Watch 19 typed judgments resolve, and get a verdict on what should
-        actually power it.
+      <div style={{ display: "flex", gap: 14 }}>
+        {kinds.map(([k, label]) => (
+          <div
+            key={k}
+            style={{
+              display: "flex",
+              flex: 1,
+              background: OG_COLOR[k],
+              color: INK,
+              fontSize: 27,
+              fontWeight: 800,
+              borderRadius: 20,
+              padding: "26px 22px",
+            }}
+          >
+            {label}
+          </div>
+        ))}
       </div>
-      <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-        {(["jev_fits", "just_write_code", "use_an_llm", "not_enough_to_judge"] as VerdictKind[]).map(
-          (k) => (
-            <div
-              key={k}
-              style={{
-                display: "flex",
-                fontSize: 21,
-                color: OG_COLOR[k],
-                border: `1px solid ${OG_COLOR[k]}`,
-                padding: "9px 20px",
-              }}
-            >
-              {k === "jev_fits" ? "Jev fits" : k === "just_write_code" ? "Just write code" : k === "use_an_llm" ? "Use an LLM" : "Not enough to judge"}
-            </div>
-          ),
-        )}
-      </div>
-      <div style={{ display: "flex", fontSize: 20, color: FAINT, marginTop: 6 }}>
-        It says no. That is the point.
-      </div>
+      <Footer />
     </div>
   );
 }

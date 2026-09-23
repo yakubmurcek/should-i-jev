@@ -131,10 +131,10 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
     <div className="flex flex-col gap-10">
       {/* ---- Input ---- */}
       <div className="flex flex-col gap-3">
-        <label htmlFor="feature" className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--dim)]">
-          The feature
+        <label htmlFor="feature" className="text-[15px] font-bold">
+          Your feature
         </label>
-        <div className="relative border border-[var(--text)] bg-[var(--bg-lift)] shadow-[4px_4px_0_var(--line)] transition focus-within:shadow-[4px_4px_0_var(--accent)]">
+        <div className="relative rounded-2xl border-2 border-[var(--line)] bg-[var(--bg-lift)] transition focus-within:border-[var(--accent)] focus-within:shadow-[5px_5px_0_var(--accent)]">
           <textarea
             ref={boxRef}
             value={text}
@@ -147,7 +147,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
             placeholder="A feature you are thinking about building. One decision, in a sentence or two."
             className="w-full resize-none bg-transparent px-4 py-4 text-base leading-relaxed text-[var(--text)] outline-none placeholder:text-[var(--faint)] focus-visible:outline-none sm:px-5 sm:text-lg"
           />
-          <div className="flex items-center justify-between gap-3 border-t border-[var(--line)] py-2 pl-4 pr-2 sm:pl-5">
+          <div className="flex items-center justify-between gap-3 border-t-2 border-[var(--line-soft)] py-2 pl-4 pr-2 sm:pl-5">
             <span
               className="font-mono text-[12px] tabular-nums"
               style={{ color: over ? "var(--v-ml)" : "var(--faint)" }}
@@ -165,16 +165,16 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               type="button"
               onClick={() => run()}
               disabled={tooShort || over || phase === "running"}
-              className="flex items-center gap-2 bg-[var(--text)] px-4 py-2 text-sm font-medium text-[var(--bg)] transition enabled:hover:bg-[var(--accent)] enabled:active:translate-y-px disabled:opacity-30"
+              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-[15px] font-extrabold text-[var(--accent-ink)] shadow-[3px_3px_0_var(--text)] transition enabled:hover:-translate-y-0.5 enabled:active:translate-y-0 enabled:active:shadow-none disabled:opacity-30 disabled:shadow-none"
             >
               {phase === "running" ? "Judging" : "Judge it"}
-              <ArrowRight size={14} weight="bold" />
+              <ArrowRight size={15} weight="bold" />
             </button>
           </div>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1.5 text-[14px]">
-          <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--faint)]">Or try</span>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[14px]">
+          <span className="mr-1 text-[14px] text-[var(--faint)]">or try</span>
           {EXAMPLES.map((ex) => (
             <button
               key={ex.label}
@@ -183,7 +183,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
                 setText(ex.text);
                 run(ex.text);
               }}
-              className="text-[var(--dim)] underline decoration-[var(--line)] underline-offset-4 transition hover:text-[var(--text)] hover:decoration-[var(--accent)]"
+              className="rounded-full border-2 border-[var(--line)] px-3 py-1 font-medium text-[var(--dim)] transition hover:-rotate-1 hover:border-[var(--accent)] hover:text-[var(--text)] active:scale-[0.97]"
             >
               {ex.label}
             </button>
@@ -200,7 +200,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               initial={reduce ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col gap-4 border-l-[3px] bg-[var(--bg-lift)] py-5 pl-5 pr-5 sm:pl-6"
+              className="flex flex-col gap-4 rounded-2xl border-2 bg-[var(--bg-lift)] p-5 sm:p-6"
               style={{ borderColor: error.code === "busy" ? "var(--v-llm)" : "var(--v-ml)" }}
             >
               <div className="flex flex-col gap-1.5">
@@ -216,7 +216,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
                       setRetryIn(null);
                       run();
                     }}
-                    className="bg-[var(--text)] px-4 py-2 text-sm font-medium text-[var(--bg)] transition hover:bg-[var(--accent)] active:translate-y-px"
+                    className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-extrabold text-[var(--accent-ink)] shadow-[3px_3px_0_var(--text)] transition hover:-translate-y-0.5 active:translate-y-0 active:shadow-none"
                   >
                     Try again now
                   </button>
@@ -240,14 +240,14 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               {phase === "done" && record && (
                 <div className="flex flex-col gap-3">
                   <VerdictBanner verdict={record.verdict} answers={record.work.answers} />
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                  <div className="flex flex-wrap items-center gap-2.5 text-sm">
                     <a
                       href={`https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(
                         `${origin}/v/${record.id}`,
                       )}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-2 text-[var(--dim)] transition hover:text-[var(--accent)]"
+                      className="flex items-center gap-2 rounded-xl bg-[var(--text)] px-4 py-2.5 font-bold text-[var(--bg)] shadow-[3px_3px_0_var(--accent)] transition hover:-translate-y-0.5 active:translate-y-0 active:shadow-none"
                     >
                       <XLogo size={14} weight="fill" />
                       Post this verdict
@@ -255,7 +255,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
                     <button
                       type="button"
                       onClick={copyLink}
-                      className="flex items-center gap-2 text-[var(--dim)] transition hover:text-[var(--accent)]"
+                      className="flex items-center gap-2 rounded-xl border-2 border-[var(--line)] px-4 py-2 font-semibold text-[var(--dim)] transition hover:border-[var(--text)] hover:text-[var(--text)]"
                     >
                       <LinkIcon size={14} weight="bold" />
                       {copied ? "Copied" : "Copy link"}
@@ -277,8 +277,8 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               )}
 
               <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1 border-t border-[var(--text)] pt-3">
-                  <h3 className="font-serif text-3xl leading-tight">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
                     {phase === "running" ? "Asking nineteen questions at once" : "The nineteen checks behind it"}
                   </h3>
                   <p className="text-[13px] text-[var(--faint)]">

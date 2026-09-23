@@ -1,45 +1,45 @@
 import Studio from "@/components/Studio";
 import Masthead from "@/components/Masthead";
+import MadeBy from "@/components/MadeBy";
 import { LEGEND, VERDICT_COLOR } from "@/components/verdict-meta";
 import { VERDICT_HEADLINES } from "@/lib/verdict";
 
 export default function HomePage() {
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-4 pb-24 pt-6 sm:px-6 sm:pt-10">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <header className="flex flex-col gap-8">
-        <Masthead right="Nineteen checks · one request" />
+        <Masthead right="19 checks · 1 request · built on Jev" />
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-end lg:gap-12">
-          <h1 className="font-serif text-[2.9rem] leading-[0.98] tracking-[-0.01em] sm:text-7xl">
-            Does your feature actually need an <em className="text-[var(--accent)]">LLM?</em>
+        <div className="flex flex-col gap-6 pt-4 sm:pt-8">
+          <h1 className="max-w-[16ch] text-[3.1rem] font-extrabold leading-[0.95] tracking-[-0.035em] sm:text-[5.5rem]">
+            Does your feature actually need an{" "}
+            <span className="inline-block -rotate-2 rounded-xl bg-[var(--accent)] px-3 text-[var(--accent-ink)]">LLM?</span>
           </h1>
-          <p className="max-w-[46ch] text-[17px] leading-relaxed text-[var(--dim)]">
+          <p className="max-w-[52ch] text-lg leading-relaxed text-[var(--dim)] sm:text-xl">
             Describe it in a sentence. Nineteen typed checks rule on what should power it and hand
-            you a starting point. The most common answer is{" "}
-            <span className="font-medium text-[var(--v-code)]">just write code</span>.
+            you a starting point. Most of the time the answer is{" "}
+            <span className="font-bold text-[var(--v-code)]">just write code</span>.
           </p>
         </div>
 
-        <ol
-          className="grid grid-cols-1 border-t border-[var(--line)] sm:grid-cols-5"
-          aria-label="Possible verdicts, cheapest first"
-        >
+        <ol className="grid grid-cols-2 gap-2.5 sm:grid-cols-5" aria-label="Possible verdicts, cheapest first">
           {LEGEND.map(({ kind, cost }, i) => (
             <li
               key={kind}
-              className="flex items-baseline gap-3 border-b border-[var(--line)] py-3 sm:flex-col sm:gap-1.5 sm:border-b-0 sm:border-l sm:px-3 sm:first:border-l-0 sm:first:pl-0"
+              className={`flex flex-col justify-between gap-5 rounded-2xl p-3.5 text-[var(--on-color)] transition hover:-rotate-1 ${i === 4 ? "col-span-2 sm:col-span-1" : ""}`}
+              style={{ background: VERDICT_COLOR[kind] }}
             >
-              <span className="font-mono text-[11px] text-[var(--faint)]">{String(i + 1).padStart(2, "0")}</span>
-              <span className="text-[15px] font-medium" style={{ color: VERDICT_COLOR[kind] }}>
-                {VERDICT_HEADLINES[kind]}
+              <span className="font-mono text-[11px] font-bold opacity-60">{String(i + 1).padStart(2, "0")}</span>
+              <span className="flex flex-col gap-0.5">
+                <span className="text-[17px] font-extrabold leading-tight tracking-tight">{VERDICT_HEADLINES[kind]}</span>
+                <span className="text-[13px] font-medium opacity-70">{cost}</span>
               </span>
-              <span className="ml-auto text-[13px] text-[var(--faint)] sm:ml-0">{cost}</span>
             </li>
           ))}
         </ol>
-        <p className="-mt-4 text-[13px] text-[var(--faint)]">
+        <p className="-mt-3 text-[14px] text-[var(--faint)]">
           Cheapest first.{" "}
-          <a href="https://typesafe.ai" target="_blank" rel="noreferrer" className="text-[var(--dim)] underline decoration-[var(--line)] underline-offset-4 hover:text-[var(--text)] hover:decoration-[var(--accent)]">
+          <a href="https://typesafe.ai" target="_blank" rel="noreferrer" className="font-semibold text-[var(--dim)] underline decoration-[var(--accent)] decoration-2 underline-offset-4 hover:text-[var(--text)]">
             Jev
           </a>{" "}
           returns typed judgments instead of prose, so it sits between an{" "}
@@ -49,17 +49,7 @@ export default function HomePage() {
 
       <Studio />
 
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--text)] pt-3 font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--faint)]">
-        <span>Built on Jev by TypeSafe · every verdict links to its working</span>
-        <a
-          href="https://github.com/yakubmurcek/should-i-jev"
-          target="_blank"
-          rel="noreferrer"
-          className="transition hover:text-[var(--accent)]"
-        >
-          Source on GitHub ↗
-        </a>
-      </footer>
+      <MadeBy />
     </main>
   );
 }

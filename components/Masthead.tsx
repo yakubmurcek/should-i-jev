@@ -1,13 +1,16 @@
 import Link from "next/link";
 
-/** The running head on every page, set like a printed report. */
+/** The top bar on every page: the name as a sticker, one fact on the right. */
 export default function Masthead({ right }: { right?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-[var(--text)] pb-2 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--dim)]">
-      <Link href="/" className="text-[var(--text)] transition hover:text-[var(--accent)]">
-        Should I Jev?
+    <div className="flex items-center justify-between gap-4">
+      <Link
+        href="/"
+        className="-rotate-2 rounded-lg bg-[var(--accent)] px-2.5 py-1 text-[15px] font-extrabold tracking-tight text-[var(--accent-ink)] transition hover:rotate-0"
+      >
+        should i jev?
       </Link>
-      {right && <span className="hidden sm:inline">{right}</span>}
+      {right && <span className="hidden font-mono text-[12px] text-[var(--faint)] sm:inline">{right}</span>}
     </div>
   );
 }
