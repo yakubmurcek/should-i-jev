@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Link as LinkIcon, XLogo } from "@phosphor-icons/react";
+import { ArrowRight, CircleNotch, Link as LinkIcon, XLogo } from "@phosphor-icons/react";
 import type { VerdictRecord } from "@/lib/verdict";
 import { MAX_DESCRIPTION_CHARS, MIN_DESCRIPTION_CHARS } from "@/lib/state";
 import { EXAMPLES, VERDICT_GIST } from "@/components/verdict-meta";
@@ -11,6 +11,7 @@ import VerdictBanner from "@/components/VerdictBanner";
 import SharpenPanel from "@/components/SharpenPanel";
 import VerdictDetails from "@/components/VerdictDetails";
 import NextStep from "@/components/NextStep";
+import Judging from "@/components/Judging";
 
 type Phase = "idle" | "running" | "done" | "error";
 
@@ -38,6 +39,16 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
   // disagree on the share href, which is a hydration mismatch on every permalink.
   const [origin, setOrigin] = useState("");
   useEffect(() => setOrigin(window.location.origin), []);
+
+  // Scroll once the loading card is actually on the page: scrolling before it
+  // renders lands on an empty div and leaves the visitor staring at the input.
+  useEffect(() => {
+    if (phase !== "running") return;
+    const id = requestAnimationFrame(() =>
+      resultRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }),
+    );
+    return () => cancelAnimationFrame(id);
+  }, [phase, reduce]);
 
   const tooShort = text.trim().length < MIN_DESCRIPTION_CHARS;
   const over = text.length > MAX_DESCRIPTION_CHARS;
@@ -71,9 +82,6 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
     setError(null);
     setRetryIn(null);
     setRecord(null);
-    requestAnimationFrame(() =>
-      resultRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }),
-    );
 
     try {
       const res = await fetch("/api/verdict", {
@@ -165,10 +173,14 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               type="button"
               onClick={() => run()}
               disabled={tooShort || over || phase === "running"}
-              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-[15px] font-extrabold text-[var(--accent-ink)] shadow-[3px_3px_0_var(--text)] transition enabled:hover:-translate-y-0.5 enabled:active:translate-y-0 enabled:active:shadow-none disabled:opacity-30 disabled:shadow-none"
+              className={`flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-[15px] font-extrabold text-[var(--accent-ink)] shadow-[3px_3px_0_var(--text)] transition enabled:hover:-translate-y-0.5 enabled:active:translate-y-0 enabled:active:shadow-none disabled:shadow-none ${phase === "running" ? "" : "disabled:opacity-30"}`}
             >
-              {phase === "running" ? "Judging" : "Judge it"}
-              <ArrowRight size={15} weight="bold" />
+              {phase === "running" ? "Judging..." : "Judge it"}
+              {phase === "running" ? (
+                <CircleNotch size={15} weight="bold" className="animate-spin" />
+              ) : (
+                <ArrowRight size={15} weight="bold" />
+              )}
             </button>
           </div>
         </div>
@@ -192,7 +204,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
       </div>
 
       {/* ---- Result ---- */}
-      <div ref={resultRef} className="scroll-mt-6">
+      <div ref={resultRef} className="scroll-mt-12">
         <AnimatePresence mode="wait">
           {phase === "error" && error && (
             <motion.div
@@ -237,6 +249,8 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               animate={{ opacity: 1 }}
               className="flex flex-col gap-8"
             >
+              {phase === "running" && <Judging />}
+
               {phase === "done" && record && (
                 <div className="flex flex-col gap-3">
                   <VerdictBanner verdict={record.verdict} answers={record.work.answers} />
