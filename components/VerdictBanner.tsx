@@ -2,42 +2,60 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { Verdict } from "@/lib/verdict";
-import { VERDICT_COLOR, VERDICT_GIST } from "@/components/verdict-meta";
+import type { Answer } from "@/lib/jev/types";
+import { read } from "@/components/JudgmentGrid";
+import { TILE_LABEL, VERDICT_COLOR, VERDICT_GIST } from "@/components/verdict-meta";
 
 /** The answer, readable in about two seconds. Everything else is below it. */
-export default function VerdictBanner({ verdict }: { verdict: Verdict }) {
+export default function VerdictBanner({ verdict, answers = {} }: { verdict: Verdict; answers?: Record<string, Answer> }) {
   const reduce = useReducedMotion();
   const color = VERDICT_COLOR[verdict.kind];
+  // The two or three answers that moved it most, so "why" is visible without
+  // opening anything.
+  const top = [...verdict.deciding].sort((a, b) => b.weight - a.weight).slice(0, 3);
 
   return (
     <motion.div
-      initial={reduce ? false : { opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: "spring", stiffness: 240, damping: 22 }}
-      className="relative overflow-hidden rounded-2xl border p-6 sm:p-8"
-      style={{ borderColor: `color-mix(in oklab, ${color} 35%, transparent)` }}
+      initial={reduce ? false : { opacity: 0, y: 10, rotate: -1 }}
+      animate={{ opacity: 1, y: 0, rotate: 0 }}
+      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      className="relative rounded-3xl p-6 text-[var(--on-color)] sm:p-9"
+      style={{ background: color }}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{ background: `radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, ${color} 11%, transparent), transparent 62%)` }}
-      />
-      <div className="relative flex flex-col gap-3">
-        <h2
-          className="text-3xl font-semibold tracking-tight sm:text-5xl"
-          style={{ color }}
-        >
+      <span className="absolute -top-3 left-6 -rotate-3 rounded-lg bg-[var(--bg)] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--text)] sm:left-9">
+        verdict
+      </span>
+      <div className="flex flex-col gap-3">
+        <h2 className="text-[3.2rem] font-extrabold leading-[0.9] tracking-[-0.04em] sm:text-8xl">
           {verdict.headline}
         </h2>
-        <p className="max-w-[48ch] text-lg text-[var(--text)] sm:text-xl">
+        <p className="max-w-[40ch] text-xl font-bold leading-snug sm:text-2xl">
           {VERDICT_GIST[verdict.kind]}
         </p>
+        <p className="max-w-[66ch] text-[15px] font-medium leading-relaxed opacity-75">
+          {verdict.why.charAt(0).toUpperCase() + verdict.why.slice(1)}.
+        </p>
+
+        {top.length > 0 && (
+          <ul className="mt-2 flex flex-wrap gap-2" aria-label="What decided it">
+            {top.map((d) => (
+              <li
+                key={d.id}
+                className="flex items-center gap-2 rounded-full bg-[var(--bg)] px-3.5 py-1.5 text-[13px]"
+              >
+                <span className="text-[var(--dim)]">{TILE_LABEL[d.id] ?? d.id}</span>
+                {answers[d.id] && (
+                  <span className="font-mono font-bold" style={{ color }}>
+                    {read(d.id, answers[d.id]!).text}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
 
         {verdict.provisional && (
-          <p
-            className="mt-1 w-fit rounded-full border px-3 py-1 text-[13px]"
-            style={{ borderColor: "rgb(255 180 84 / 0.4)", color: "var(--v-llm)" }}
-          >
+          <p className="mt-1 w-fit rounded-full border-2 border-[var(--on-color)] px-3 py-1 text-[14px] font-bold">
             Provisional. Do not let it act alone.
           </p>
         )}

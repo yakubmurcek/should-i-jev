@@ -2,26 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Flat colour blocks on near-black. No glows, no gradients: colour is solid
+ * paint, and depth is a hard offset shadow, never a blur.
+ */
 :root {
-  --bg: #0a0a0b;
-  --bg-lift: #121214;
-  --line: #24242a;
-  --line-soft: #1b1b20;
-  --text: #ededf0;
-  --dim: #8f8f9a;
-  --faint: #5d5d68;
+  --bg: #0f0f0f;
+  --bg-lift: #1a1a1a;
+  --line: #2e2e2e;
+  --line-soft: #222222;
+  --text: #f6f2e9;
+  --dim: #aaa59b;
+  --faint: #6e6a62;
 
   /* One accent. Everything interactive is this colour. */
-  --accent: #c2f04a;
-  --accent-ink: #0a0a0b;
+  --accent: #ffd23f;
+  --accent-ink: #0f0f0f;
 
-  /* Verdict colours are semantic state, not decoration. */
-  --v-fits: #c2f04a;
-  --v-code: #62d0ff;
-  --v-llm: #ffb454;
-  --v-both: #c08bff;
-  --v-ml: #ff7a9c;
-  --v-unknown: #8f8f9a;
+  /* Verdict colours are semantic state. Flat paint, read with dark ink on top. */
+  --v-fits: #3ddc84;
+  --v-code: #5aa9ff;
+  --v-llm: #ff9a3c;
+  --v-both: #b08cff;
+  --v-ml: #ff5f8f;
+  --v-unknown: #c9c4b8;
+  --on-color: #0f0f0f;
+
+  color-scheme: dark;
 }
 
 html, body { background: var(--bg); color: var(--text); }
@@ -36,8 +43,8 @@ body {
 /* Focus is visible and uses the one accent, everywhere. */
 *:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 @media (prefers-reduced-motion: reduce) {
