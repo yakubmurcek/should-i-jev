@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowRight, CircleNotch, Link as LinkIcon, XLogo } from "@phosphor-icons/react";
 import type { VerdictRecord } from "@/lib/verdict";
 import { MAX_DESCRIPTION_CHARS, MIN_DESCRIPTION_CHARS } from "@/lib/state";
-import { EXAMPLES, VERDICT_GIST } from "@/components/verdict-meta";
+import { EXAMPLES, SHARE_LINE } from "@/components/verdict-meta";
 import JudgmentGrid from "@/components/JudgmentGrid";
 import VerdictBanner from "@/components/VerdictBanner";
 import SharpenPanel from "@/components/SharpenPanel";
@@ -132,7 +132,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
   }
 
   const shareText = record
-    ? `"${record.description.slice(0, 90)}${record.description.length > 90 ? "..." : ""}"\n\n→ ${record.verdict.headline}. ${VERDICT_GIST[record.verdict.kind]}`
+    ? `${SHARE_LINE[record.verdict.kind]}\n\nThe feature: ${record.description.slice(0, 100)}${record.description.length > 100 ? "…" : ""}\n\nCheck yours:`
     : "";
 
   return (

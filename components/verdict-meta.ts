@@ -10,6 +10,16 @@ export const VERDICT_COLOR: Record<VerdictKind, string> = {
   not_enough_to_judge: "var(--v-unknown)",
 };
 
+/** First-person line for the X share post, written as the poster talking. */
+export const SHARE_LINE: Record<VerdictKind, string> = {
+  jev_fits: "Turns out my feature doesn't need an LLM. A typed judgment from Jev does the job.",
+  just_write_code: "Turns out my feature doesn't need AI at all. A few lines of code will do.",
+  use_an_llm: "Checked whether my feature really needs an LLM. It does.",
+  jev_plus_llm: "My feature splits in two: Jev makes the call, an LLM writes the words.",
+  classical_ml: "Turns out my feature wants a model trained on my own labels, not an LLM.",
+  not_enough_to_judge: "Asked whether my feature needs AI. Jev wants more detail before it rules.",
+};
+
 /** The one-line read, for people who will not read the paragraph. */
 export const VERDICT_GIST: Record<VerdictKind, string> = {
   jev_fits: "A typed judgment is the right tool here.",
