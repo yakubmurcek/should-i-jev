@@ -51,11 +51,8 @@ export default function HomePage() {
             Should I{" "}
             <span className="inline-block -rotate-2 rounded-2xl bg-[var(--accent)] px-3 text-[var(--accent-ink)]">Jev?</span>
           </h1>
-          <p className="max-w-[56ch] text-lg leading-relaxed text-[var(--dim)] sm:text-xl">
-            Jev doesn&apos;t write prose. You ask it a question and get back a{" "}
-            <span className="font-bold text-[var(--text)]">typed answer with a probability</span>, so it
-            sits between an <code className="font-mono text-[var(--text)]">if</code> and an LLM. Describe
-            your feature and find out if it&apos;s a Jev job.
+          <p className="max-w-[48ch] text-lg leading-relaxed text-[var(--dim)] sm:text-xl">
+            Describe your feature to find out if it&apos;s a Jev job.
           </p>
         </div>
 
