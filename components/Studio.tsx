@@ -131,8 +131,15 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
     setTimeout(() => setCopied(false), 1800);
   }
 
+  const shareFeature = record
+    ? (() => {
+        const d = record.description.trim().replace(/[.!]+$/, "");
+        const short = d.length > 80 ? `${d.slice(0, 80).trimEnd()}…` : d;
+        return short.charAt(0).toLowerCase() + short.slice(1);
+      })()
+    : "";
   const shareText = record
-    ? `${SHARE_LINE[record.verdict.kind]}\n\nThe feature: ${record.description.slice(0, 100)}${record.description.length > 100 ? "…" : ""}\n\nCheck yours:`
+    ? `tested if i should use jev for "${shareFeature}"\n\n${SHARE_LINE[record.verdict.kind]}\n\ncheck yours 👇`
     : "";
 
   return (
