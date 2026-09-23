@@ -139,7 +139,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
       })()
     : "";
   const shareText = record
-    ? `tested if i should use jev for "${shareFeature}"\n\n${SHARE_LINE[record.verdict.kind]}\n\ncheck yours 👇`
+    ? `Tested if I should use Jev for "${shareFeature}"\n\n${SHARE_LINE[record.verdict.kind]}\n\nCheck yours 👇`
     : "";
 
   return (
