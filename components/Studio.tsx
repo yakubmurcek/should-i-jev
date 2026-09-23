@@ -134,7 +134,8 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
   const shareFeature = record
     ? (() => {
         const d = record.description.trim().replace(/[.!]+$/, "");
-        const short = d.length > 80 ? `${d.slice(0, 80).trimEnd()}…` : d;
+        // Cut on a word boundary so the post never ends mid-word.
+        const short = d.length > 90 ? `${d.slice(0, 90).replace(/\s+\S*$/, "").replace(/[,;:]$/, "")}…` : d;
         return short.charAt(0).toLowerCase() + short.slice(1);
       })()
     : "";
