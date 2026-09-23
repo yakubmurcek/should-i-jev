@@ -72,16 +72,16 @@ export default function NextStep({ record }: { record: VerdictRecord }) {
   }
 
   return (
-    <section className="grid gap-5 rounded-2xl border border-[var(--line)] bg-[var(--bg-lift)] p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+    <section className="grid gap-6 rounded-3xl border-2 border-[var(--line-soft)] bg-[var(--bg-lift)] p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:gap-8">
       <div className="flex flex-col gap-4">
-        <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[var(--faint)]">What to build</p>
-        <h3 className="text-xl font-medium tracking-tight">{step.title}</h3>
+        <p className="text-[14px] font-bold" style={{ color }}>What to build</p>
+        <h3 className="-mt-2 text-3xl font-extrabold tracking-tight">{step.title}</h3>
         <ol className="flex flex-col gap-3">
           {step.steps.map((s, i) => (
             <li key={s} className="flex gap-3 text-[15px] leading-relaxed text-[var(--dim)]">
               <span
-                className="mt-[3px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-[family-name:var(--font-mono)] text-[11px]"
-                style={{ background: `color-mix(in oklab, ${color} 16%, transparent)`, color }}
+                className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-[12px] font-bold text-[var(--on-color)]"
+                style={{ background: color }}
               >
                 {i + 1}
               </span>
@@ -94,17 +94,17 @@ export default function NextStep({ record }: { record: VerdictRecord }) {
             href="https://docs.typesafe.ai"
             target="_blank"
             rel="noreferrer"
-            className="w-fit text-[13px] text-[var(--faint)] underline decoration-[var(--line)] underline-offset-4 transition hover:text-[var(--text)]"
+            className="w-fit text-[14px] font-semibold text-[var(--dim)] underline decoration-[var(--accent)] decoration-2 underline-offset-4 transition hover:text-[var(--text)]"
           >
-            TypeSafe docs
+            TypeSafe docs ↗
           </a>
         )}
       </div>
 
       {code ? (
-        <div className="relative min-w-0 overflow-hidden rounded-xl border border-[var(--line-soft)] bg-[var(--bg)]">
-          <div className="flex items-center justify-between border-b border-[var(--line-soft)] px-4 py-2">
-            <span className="font-[family-name:var(--font-mono)] text-[12px] text-[var(--faint)]">starter.ts</span>
+        <div className="relative min-w-0 overflow-hidden rounded-2xl border-2 border-[var(--line)] bg-[var(--bg)]">
+          <div className="flex items-center justify-between border-b-2 border-[var(--line-soft)] px-4 py-2">
+            <span className="font-mono text-[12px] text-[var(--faint)]">starter.ts</span>
             <button
               type="button"
               onClick={copy}
@@ -114,7 +114,7 @@ export default function NextStep({ record }: { record: VerdictRecord }) {
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
-          <pre className="overflow-x-auto p-4 font-[family-name:var(--font-mono)] text-[12px] leading-relaxed text-[var(--dim)]">
+          <pre className="overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-[var(--dim)]">
             {code}
           </pre>
         </div>
@@ -127,8 +127,8 @@ export default function NextStep({ record }: { record: VerdictRecord }) {
 
 function Flip({ text }: { text: string }) {
   return (
-    <div className="flex flex-col justify-center gap-2 rounded-xl border border-dashed border-[var(--line)] p-5">
-      <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[var(--faint)]">What would flip it</p>
+    <div className="flex flex-col justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--accent)] p-5">
+      <p className="text-[14px] font-bold text-[var(--accent)]">What would flip it</p>
       <p className="text-[15px] leading-relaxed text-[var(--text)]">{stripFlip(text)}</p>
     </div>
   );

@@ -10,6 +10,16 @@ export const VERDICT_COLOR: Record<VerdictKind, string> = {
   not_enough_to_judge: "var(--v-unknown)",
 };
 
+/** Verdict line for the X share post: casual, but written in normal sentence case. */
+export const SHARE_LINE: Record<VerdictKind, string> = {
+  jev_fits: "Verdict: Jev fits. No LLM, no prompt wrangling, just a typed answer.",
+  just_write_code: "Verdict: just write the if statement. No AI needed.",
+  use_an_llm: "Verdict: this one actually needs an LLM.",
+  jev_plus_llm: "Verdict: Jev makes the call, an LLM writes the words.",
+  classical_ml: "Verdict: skip the LLM and train on my own labels.",
+  not_enough_to_judge: "Verdict: Jev wants more detail first. Fair.",
+};
+
 /** The one-line read, for people who will not read the paragraph. */
 export const VERDICT_GIST: Record<VerdictKind, string> = {
   jev_fits: "A typed judgment is the right tool here.",

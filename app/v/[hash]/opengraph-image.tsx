@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { DefaultCardImage, OG_SIZE, VerdictCardImage } from "@/components/og";
+import { DefaultCardImage, OG_SIZE, VerdictCardImage, ogFonts } from "@/components/og";
 import { getVerdict } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -15,6 +15,6 @@ export default async function Image({ params }: { params: Promise<{ hash: string
   // rather than as a broken image.
   return new ImageResponse(
     record ? <VerdictCardImage record={record} /> : <DefaultCardImage />,
-    size,
+    { ...size, fonts: await ogFonts() },
   );
 }

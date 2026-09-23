@@ -41,43 +41,41 @@ export function read(id: string, a: Answer): Reading {
   return { text: a.choice.replace(/_/g, " "), value: a.confidence, fired: false, kind: "choice" };
 }
 
-function Tile({ id, answer, index }: { id: string; answer?: Answer; index: number }) {
+/** Each group gets its own paint, so the four sections read apart at a glance. */
+const GROUP_COLOR = ["var(--v-ml)", "var(--v-llm)", "var(--v-code)", "var(--v-both)"];
+
+function Row({ id, answer, index, color }: { id: string; answer?: Answer; index: number; color: string }) {
   const reduce = useReducedMotion();
   const r = answer ? read(id, answer) : null;
 
   return (
     <motion.li
-      initial={reduce ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: reduce ? 0 : index * 0.035, type: "spring", stiffness: 260, damping: 24 }}
-      className="relative overflow-hidden rounded-xl border bg-[var(--bg-lift)] px-3 py-2.5"
-      style={{ borderColor: r?.fired ? "rgb(255 122 156 / 0.45)" : "var(--line-soft)" }}
+      initial={reduce ? false : { opacity: 0, x: -6 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: reduce ? 0 : index * 0.03, type: "spring", stiffness: 300, damping: 26 }}
+      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 py-2"
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[13px] leading-tight text-[var(--dim)]">{TILE_LABEL[id] ?? id}</span>
-        {r ? (
-          <motion.span
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: reduce ? 0 : index * 0.035 + 0.08 }}
-            className="shrink-0 font-[family-name:var(--font-mono)] text-[13px] tabular-nums"
-            style={{ color: r.fired ? "var(--v-ml)" : "var(--text)" }}
-          >
-            {r.text}
-          </motion.span>
+      <span className="text-[14px] text-[var(--dim)]">{TILE_LABEL[id] ?? id}</span>
+      {r ? (
+        r.fired ? (
+          <span className="rounded-md bg-[var(--v-ml)] px-1.5 py-0.5 font-mono text-[12px] font-bold text-[var(--on-color)]">
+            {r.text} ✕
+          </span>
         ) : (
-          <span className="h-3 w-8 shrink-0 animate-pulse rounded bg-[var(--line)]" />
-        )}
-      </div>
+          <span className="font-mono text-[13px] font-medium tabular-nums text-[var(--text)]">{r.text}</span>
+        )
+      ) : (
+        <span className="h-3 w-10 animate-pulse rounded bg-[var(--line)]" />
+      )}
 
-      {/* A hairline, not a filled track: the bar is the number, said again. */}
-      <div className="mt-2 h-px w-full bg-[var(--line)]">
+      {/* The bar is the number, said again. */}
+      <div className="col-span-2 h-1 overflow-hidden rounded-full bg-[var(--line-soft)]">
         <motion.div
-          className="h-px origin-left"
-          style={{ background: r?.fired ? "var(--v-ml)" : "var(--accent)" }}
+          className="h-full origin-left rounded-full"
+          style={{ background: r?.fired ? "var(--v-ml)" : color }}
           initial={{ scaleX: 0 }}
-          animate={{ scaleX: r ? Math.max(r.value, 0.02) : 0 }}
-          transition={{ delay: reduce ? 0 : index * 0.035 + 0.05, duration: reduce ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
+          animate={{ scaleX: r ? Math.max(r.value, 0.03) : 0 }}
+          transition={{ delay: reduce ? 0 : index * 0.03 + 0.05, duration: reduce ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
         />
       </div>
     </motion.li>
@@ -93,20 +91,25 @@ export default function JudgmentGrid({
 }) {
   let i = 0;
   return (
-    <div className="flex flex-col gap-7">
-      {GROUPS.map((g) => (
-        <section key={g.title}>
-          <div className="mb-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h3 className="text-sm font-medium">{g.title}</h3>
-            <p className="text-[13px] text-[var(--faint)]">{g.note}</p>
-          </div>
-          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {g.ids.map((id) => (
-              <Tile key={id} id={id} answer={pending ? undefined : answers?.[id]} index={i++} />
-            ))}
-          </ul>
-        </section>
-      ))}
+    <div className="grid gap-3 md:grid-cols-2">
+      {GROUPS.map((g, n) => {
+        const color = GROUP_COLOR[n % GROUP_COLOR.length]!;
+        return (
+          <section key={g.title} className="rounded-2xl border-2 border-[var(--line-soft)] bg-[var(--bg-lift)] p-4 sm:p-5">
+            <div className="mb-2 flex flex-col gap-1.5">
+              <h4 className="w-fit rounded-md px-2 py-0.5 text-[13px] font-extrabold text-[var(--on-color)]" style={{ background: color }}>
+                {g.title}
+              </h4>
+              <p className="text-[13px] text-[var(--faint)]">{g.note}</p>
+            </div>
+            <ul>
+              {g.ids.map((id) => (
+                <Row key={id} id={id} answer={pending ? undefined : answers?.[id]} index={i++} color={color} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }
