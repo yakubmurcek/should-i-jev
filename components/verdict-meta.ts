@@ -10,6 +10,16 @@ export const VERDICT_COLOR: Record<VerdictKind, string> = {
   not_enough_to_judge: "var(--v-unknown)",
 };
 
+/** Verdict line for the X share post: casual, but written in normal sentence case. */
+export const SHARE_LINE: Record<VerdictKind, string> = {
+  jev_fits: "Verdict: Jev fits. No LLM, no prompt wrangling, just a typed answer.",
+  just_write_code: "Verdict: just write the if statement. No AI needed.",
+  use_an_llm: "Verdict: this one actually needs an LLM.",
+  jev_plus_llm: "Verdict: Jev makes the call, an LLM writes the words.",
+  classical_ml: "Verdict: skip the LLM and train on my own labels.",
+  not_enough_to_judge: "Verdict: Jev wants more detail first. Fair.",
+};
+
 /** The one-line read, for people who will not read the paragraph. */
 export const VERDICT_GIST: Record<VerdictKind, string> = {
   jev_fits: "A typed judgment is the right tool here.",
@@ -118,3 +128,66 @@ export const EXAMPLES: { label: string; text: string }[] = [
     text: "We run a logistics business and we think AI could help us somewhere in the operations side of things.",
   },
 ];
+
+/**
+ * The answer space, shown before anyone types. A stranger should know what the
+ * tool can say before they know what Jev is. Ordered cheapest first.
+ */
+export const LEGEND: { kind: VerdictKind; cost: string }[] = [
+  { kind: "just_write_code", cost: "free, deterministic" },
+  { kind: "classical_ml", cost: "train once, cheap to run" },
+  { kind: "jev_fits", cost: "one typed call" },
+  { kind: "jev_plus_llm", cost: "decide, then write" },
+  { kind: "use_an_llm", cost: "open-ended output" },
+];
+
+/** What to actually do on Monday, per verdict. Short enough to act on. */
+export const NEXT_STEP: Record<VerdictKind, { title: string; steps: string[] }> = {
+  just_write_code: {
+    title: "Write the rule",
+    steps: [
+      "A lookup table, a regex, or an if-chain. It is free, instant and testable.",
+      "Put the edge cases in unit tests, not in a prompt.",
+      "Reach for a model only if the rule keeps growing exceptions.",
+    ],
+  },
+  jev_fits: {
+    title: "Make one typed call",
+    steps: [
+      "Define the options in code, each with a one-line meaning.",
+      "Send the raw input as state. Get back a typed answer with a probability.",
+      "Act above a confidence bar, queue for a human below it.",
+    ],
+  },
+  use_an_llm: {
+    title: "Use a generative model",
+    steps: [
+      "The output is open-ended, so it has to be written, not picked.",
+      "Constrain it with a schema or examples, and validate what comes back.",
+      "If a decision gates the writing, split that part out to a typed call.",
+    ],
+  },
+  jev_plus_llm: {
+    title: "Split decide from write",
+    steps: [
+      "A typed call picks the branch: which template, tone or route.",
+      "An LLM writes only inside that branch, with a narrow prompt.",
+      "You can log, test and gate the decision without reading prose.",
+    ],
+  },
+  classical_ml: {
+    title: "Train on your history",
+    steps: [
+      "You already have labelled outcomes at volume. That is training data.",
+      "Start with gradient-boosted trees on the features you log today.",
+      "Retrain on a schedule and watch drift, not vibes.",
+    ],
+  },
+  not_enough_to_judge: {
+    title: "Pin down one decision",
+    steps: [
+      "Say what goes in, what comes out, and what the call is based on.",
+      "One concrete sentence about a single decision is enough.",
+    ],
+  },
+};

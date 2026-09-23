@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ImageResponse } from "next/og";
-import { DefaultCardImage, OG_SIZE, VerdictCardImage } from "@/components/og";
+import { DefaultCardImage, OG_SIZE, VerdictCardImage, ogFonts } from "@/components/og";
 import { composeVerdict } from "@/lib/compose";
 import { QUESTIONS } from "@/lib/questions";
 import { buildState } from "@/lib/state";
@@ -22,7 +22,7 @@ const recordFor = (f: (typeof FIXTURES)[number]): VerdictRecord => ({
  * read the bytes back.
  */
 async function png(element: React.ReactElement): Promise<Buffer> {
-  return Buffer.from(await new ImageResponse(element, OG_SIZE).arrayBuffer());
+  return Buffer.from(await new ImageResponse(element, { ...OG_SIZE, fonts: await ogFonts() }).arrayBuffer());
 }
 
 /** PNG signature, then IHDR's big-endian width and height. */

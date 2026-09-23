@@ -21,15 +21,15 @@ export default function SharpenPanel({
   if (gaps.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-5 rounded-2xl border border-[var(--line)] bg-[var(--bg-lift)] p-5 sm:p-6">
+    <div className="flex flex-col gap-5 rounded-3xl border-2 border-dashed border-[var(--accent)] p-5 sm:p-7">
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-3">
-          <h3 className="text-base font-medium">Sharpen it</h3>
-          <span className="font-[family-name:var(--font-mono)] text-[13px] text-[var(--faint)]">
+          <h3 className="text-2xl font-extrabold tracking-tight">Sharpen it</h3>
+          <span className="font-mono text-[13px] text-[var(--faint)]">
             {gaps.length} of 3 missing
           </span>
         </div>
-        <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--line)]">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--line)]">
           <motion.div
             className="h-full rounded-full bg-[var(--accent)]"
             initial={{ scaleX: 0 }}
@@ -53,8 +53,9 @@ export default function SharpenPanel({
                   key={chip}
                   type="button"
                   onClick={() => onAdd(gap.key, chip)}
-                  className="rounded-full border border-[var(--line)] px-3 py-1.5 text-[13px] text-[var(--dim)] transition hover:border-[var(--accent)] hover:text-[var(--text)] active:scale-[0.98]"
+                  className="rounded-full border-2 border-[var(--line)] px-3 py-1 text-[13px] font-medium text-[var(--dim)] transition hover:-rotate-1 hover:border-[var(--accent)] hover:text-[var(--text)] active:scale-[0.97]"
                 >
+                  <span className="mr-1.5 font-mono text-[var(--accent)]">+</span>
                   {chip}
                 </button>
               ))}
