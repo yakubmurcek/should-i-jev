@@ -16,25 +16,18 @@ export default function VerdictBanner({ verdict, answers = {} }: { verdict: Verd
 
   return (
     <motion.div
-      initial={reduce ? false : { opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: "spring", stiffness: 240, damping: 22 }}
-      className="relative overflow-hidden rounded-2xl border p-6 sm:p-8"
-      style={{ borderColor: `color-mix(in oklab, ${color} 35%, transparent)` }}
+      initial={reduce ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="border-t-[3px] bg-[var(--bg-lift)] px-5 pb-6 pt-4 sm:px-8 sm:pb-8"
+      style={{ borderColor: color }}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{ background: `radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, ${color} 11%, transparent), transparent 62%)` }}
-      />
-      <div className="relative flex flex-col gap-3">
-        <h2
-          className="text-3xl font-semibold tracking-tight sm:text-5xl"
-          style={{ color }}
-        >
+      <div className="flex flex-col gap-3">
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--faint)]">Verdict</p>
+        <h2 className="font-serif text-5xl leading-[0.95] sm:text-7xl" style={{ color }}>
           {verdict.headline}
         </h2>
-        <p className="max-w-[48ch] text-lg text-[var(--text)] sm:text-xl">
+        <p className="max-w-[48ch] text-lg font-medium text-[var(--text)] sm:text-xl">
           {VERDICT_GIST[verdict.kind]}
         </p>
         <p className="max-w-[68ch] text-[15px] leading-relaxed text-[var(--dim)]">
@@ -42,28 +35,28 @@ export default function VerdictBanner({ verdict, answers = {} }: { verdict: Verd
         </p>
 
         {top.length > 0 && (
-          <ul className="mt-2 flex flex-wrap gap-2" aria-label="What decided it">
+          <dl
+            className="mt-3 grid grid-cols-1 border-t border-[var(--line)] sm:grid-cols-3"
+            aria-label="What decided it"
+          >
             {top.map((d) => (
-              <li
+              <div
                 key={d.id}
-                className="flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--bg)]/60 px-3 py-1 text-[13px]"
+                className="flex items-baseline justify-between gap-3 border-b border-[var(--line)] py-2 sm:flex-col sm:justify-start sm:gap-0.5 sm:border-b-0 sm:border-l sm:px-3 sm:first:border-l-0 sm:first:pl-0"
               >
-                <span className="text-[var(--dim)]">{TILE_LABEL[d.id] ?? d.id}</span>
+                <dt className="text-[13px] text-[var(--dim)]">{TILE_LABEL[d.id] ?? d.id}</dt>
                 {answers[d.id] && (
-                  <span className="font-[family-name:var(--font-mono)]" style={{ color }}>
+                  <dd className="font-mono text-[14px]" style={{ color }}>
                     {read(d.id, answers[d.id]!).text}
-                  </span>
+                  </dd>
                 )}
-              </li>
+              </div>
             ))}
-          </ul>
+          </dl>
         )}
 
         {verdict.provisional && (
-          <p
-            className="mt-1 w-fit rounded-full border px-3 py-1 text-[13px]"
-            style={{ borderColor: "rgb(255 180 84 / 0.4)", color: "var(--v-llm)" }}
-          >
+          <p className="mt-1 w-fit border-l-2 border-[var(--v-llm)] pl-3 text-[14px] text-[var(--v-llm)]">
             Provisional. Do not let it act alone.
           </p>
         )}

@@ -3,21 +3,22 @@ import type { Answer } from "@/lib/jev/types";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
-const BG = "#0a0a0b";
-const LIFT = "#121214";
-const LINE = "#24242a";
-const TEXT = "#ededf0";
-const DIM = "#8f8f9a";
-const FAINT = "#5d5d68";
+const BG = "#f2efe6";
+const LIFT = "#faf8f2";
+const LINE = "#d4cdbc";
+const TEXT = "#1b1915";
+const DIM = "#58534a";
+const FAINT = "#8a8375";
+const ACCENT = "#c43d23";
 
 /** Same six semantic colours as the app, inlined: Satori cannot read CSS vars. */
 export const OG_COLOR: Record<VerdictKind, string> = {
-  jev_fits: "#c2f04a",
-  just_write_code: "#62d0ff",
-  use_an_llm: "#ffb454",
-  jev_plus_llm: "#c08bff",
-  classical_ml: "#ff7a9c",
-  not_enough_to_judge: "#8f8f9a",
+  jev_fits: "#2f7a3c",
+  just_write_code: "#1f5c96",
+  use_an_llm: "#a86408",
+  jev_plus_llm: "#6a47a8",
+  classical_ml: "#b0354f",
+  not_enough_to_judge: "#7a7466",
 };
 
 const GIST: Record<VerdictKind, string> = {
@@ -96,23 +97,16 @@ export function VerdictCardImage({ record }: { record: VerdictRecord }) {
         fontFamily: "sans-serif",
       }}
     >
-      {/* Tint keyed to the verdict, so the six outcomes are distinguishable in a feed. */}
+      {/* A rule in the verdict colour, so the six outcomes are distinguishable in a feed. */}
       <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: OG_SIZE.width,
-          height: OG_SIZE.height,
-          background: `radial-gradient(90% 75% at 0% 0%, ${color}24, ${color}00 62%)`,
-        }}
+        style={{ position: "absolute", top: 0, left: 0, width: OG_SIZE.width, height: 12, background: color }}
       />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-        <div style={{ display: "flex", fontSize: 21, color: FAINT, letterSpacing: 1 }}>
-          should i jev?
+        <div style={{ display: "flex", fontSize: 19, color: TEXT, letterSpacing: 3, borderBottom: `2px solid ${TEXT}`, paddingBottom: 10 }}>
+          SHOULD I JEV? · VERDICT
         </div>
-        <div style={{ display: "flex", fontSize: 88, fontWeight: 700, color, letterSpacing: -2.5 }}>
+        <div style={{ display: "flex", fontSize: 92, fontFamily: "serif", color, letterSpacing: -1.5 }}>
           {record.verdict.headline}
         </div>
         <div style={{ display: "flex", fontSize: 33, color: TEXT }}>
@@ -135,7 +129,6 @@ export function VerdictCardImage({ record }: { record: VerdictRecord }) {
                 flex: 1,
                 background: LIFT,
                 border: `1px solid ${LINE}`,
-                borderRadius: 12,
                 padding: "12px 14px",
               }}
             >
@@ -172,16 +165,9 @@ export function DefaultCardImage() {
       }}
     >
       <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: OG_SIZE.width,
-          height: OG_SIZE.height,
-          background: `radial-gradient(90% 80% at 0% 0%, ${OG_COLOR.jev_fits}22, ${OG_COLOR.jev_fits}00 60%)`,
-        }}
+        style={{ position: "absolute", top: 0, left: 0, width: OG_SIZE.width, height: 12, background: ACCENT }}
       />
-      <div style={{ display: "flex", fontSize: 96, fontWeight: 700, color: TEXT, letterSpacing: -3 }}>
+      <div style={{ display: "flex", fontSize: 104, fontFamily: "serif", color: TEXT, letterSpacing: -2 }}>
         Should I Jev?
       </div>
       <div style={{ display: "flex", fontSize: 34, color: DIM, lineHeight: 1.4, maxWidth: 930 }}>
@@ -197,8 +183,7 @@ export function DefaultCardImage() {
                 display: "flex",
                 fontSize: 21,
                 color: OG_COLOR[k],
-                border: `1px solid ${OG_COLOR[k]}59`,
-                borderRadius: 999,
+                border: `1px solid ${OG_COLOR[k]}`,
                 padding: "9px 20px",
               }}
             >

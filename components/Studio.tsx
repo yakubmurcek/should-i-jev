@@ -131,7 +131,10 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
     <div className="flex flex-col gap-10">
       {/* ---- Input ---- */}
       <div className="flex flex-col gap-3">
-        <div className="relative rounded-2xl border border-[var(--line)] bg-[var(--bg-lift)] transition focus-within:border-[var(--accent)]">
+        <label htmlFor="feature" className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--dim)]">
+          The feature
+        </label>
+        <div className="relative border border-[var(--text)] bg-[var(--bg-lift)] shadow-[4px_4px_0_var(--line)] transition focus-within:shadow-[4px_4px_0_var(--accent)]">
           <textarea
             ref={boxRef}
             value={text}
@@ -139,14 +142,14 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
             onKeyDown={(e) => {
               if ((e.metaKey || e.ctrlKey) && e.key === "Enter") run();
             }}
+            id="feature"
             rows={3}
-            aria-label="Describe your feature"
             placeholder="A feature you are thinking about building. One decision, in a sentence or two."
-            className="w-full resize-none bg-transparent px-4 py-4 text-base leading-relaxed text-[var(--text)] outline-none placeholder:text-[var(--faint)] sm:px-5 sm:text-lg"
+            className="w-full resize-none bg-transparent px-4 py-4 text-base leading-relaxed text-[var(--text)] outline-none placeholder:text-[var(--faint)] focus-visible:outline-none sm:px-5 sm:text-lg"
           />
-          <div className="flex items-center justify-between gap-3 border-t border-[var(--line-soft)] px-4 py-2.5 sm:px-5">
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--line)] py-2 pl-4 pr-2 sm:pl-5">
             <span
-              className="font-[family-name:var(--font-mono)] text-[12px] tabular-nums"
+              className="font-mono text-[12px] tabular-nums"
               style={{ color: over ? "var(--v-ml)" : "var(--faint)" }}
             >
               {text.length}/{MAX_DESCRIPTION_CHARS}
@@ -162,15 +165,16 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               type="button"
               onClick={() => run()}
               disabled={tooShort || over || phase === "running"}
-              className="flex items-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-ink)] transition enabled:hover:brightness-110 enabled:active:scale-[0.98] disabled:opacity-35"
+              className="flex items-center gap-2 bg-[var(--text)] px-4 py-2 text-sm font-medium text-[var(--bg)] transition enabled:hover:bg-[var(--accent)] enabled:active:translate-y-px disabled:opacity-30"
             >
               {phase === "running" ? "Judging" : "Judge it"}
-              <ArrowRight size={15} weight="bold" />
+              <ArrowRight size={14} weight="bold" />
             </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1.5 text-[14px]">
+          <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--faint)]">Or try</span>
           {EXAMPLES.map((ex) => (
             <button
               key={ex.label}
@@ -179,7 +183,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
                 setText(ex.text);
                 run(ex.text);
               }}
-              className="rounded-full border border-[var(--line)] px-3 py-1.5 text-[13px] text-[var(--dim)] transition hover:border-[var(--accent)] hover:text-[var(--text)] active:scale-[0.98]"
+              className="text-[var(--dim)] underline decoration-[var(--line)] underline-offset-4 transition hover:text-[var(--text)] hover:decoration-[var(--accent)]"
             >
               {ex.label}
             </button>
@@ -196,11 +200,8 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               initial={reduce ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col gap-4 rounded-2xl border bg-[var(--bg-lift)] p-5 sm:p-6"
-              style={{
-                borderColor:
-                  error.code === "busy" ? "rgb(255 180 84 / 0.35)" : "rgb(255 122 156 / 0.35)",
-              }}
+              className="flex flex-col gap-4 border-l-[3px] bg-[var(--bg-lift)] py-5 pl-5 pr-5 sm:pl-6"
+              style={{ borderColor: error.code === "busy" ? "var(--v-llm)" : "var(--v-ml)" }}
             >
               <div className="flex flex-col gap-1.5">
                 <p className="text-lg text-[var(--text)]">{error.message}</p>
@@ -215,12 +216,12 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
                       setRetryIn(null);
                       run();
                     }}
-                    className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-ink)] transition hover:brightness-110 active:scale-[0.98]"
+                    className="bg-[var(--text)] px-4 py-2 text-sm font-medium text-[var(--bg)] transition hover:bg-[var(--accent)] active:translate-y-px"
                   >
                     Try again now
                   </button>
                   {retryIn !== null && (
-                    <span className="font-[family-name:var(--font-mono)] text-[13px] text-[var(--faint)]">
+                    <span className="font-mono text-[13px] text-[var(--faint)]">
                       retrying in {retryIn}s
                     </span>
                   )}
@@ -239,14 +240,14 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               {phase === "done" && record && (
                 <div className="flex flex-col gap-3">
                   <VerdictBanner verdict={record.verdict} answers={record.work.answers} />
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
                     <a
                       href={`https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(
                         `${origin}/v/${record.id}`,
                       )}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-2 rounded-full border border-[var(--line)] px-4 py-2 text-sm text-[var(--dim)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
+                      className="flex items-center gap-2 text-[var(--dim)] transition hover:text-[var(--accent)]"
                     >
                       <XLogo size={14} weight="fill" />
                       Post this verdict
@@ -254,7 +255,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
                     <button
                       type="button"
                       onClick={copyLink}
-                      className="flex items-center gap-2 rounded-full border border-[var(--line)] px-4 py-2 text-sm text-[var(--dim)] transition hover:border-[var(--accent)] hover:text-[var(--text)] active:scale-[0.98]"
+                      className="flex items-center gap-2 text-[var(--dim)] transition hover:text-[var(--accent)]"
                     >
                       <LinkIcon size={14} weight="bold" />
                       {copied ? "Copied" : "Copy link"}
@@ -276,8 +277,8 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
               )}
 
               <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-lg font-medium tracking-tight">
+                <div className="flex flex-col gap-1 border-t border-[var(--text)] pt-3">
+                  <h3 className="font-serif text-3xl leading-tight">
                     {phase === "running" ? "Asking nineteen questions at once" : "The nineteen checks behind it"}
                   </h3>
                   <p className="text-[13px] text-[var(--faint)]">

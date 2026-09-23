@@ -13,15 +13,15 @@ export default function VerdictDetails({ record }: { record: VerdictRecord }) {
   const toggle = (k: string) => setOpen(open === k ? null : k);
 
   const Row = ({ k, title, count, children }: { k: string; title: string; count?: number; children: React.ReactNode }) => (
-    <div className="border-t border-[var(--line-soft)]">
+    <div className="border-b border-[var(--line)]">
       <button
         type="button"
         onClick={() => toggle(k)}
         aria-expanded={open === k}
         className="flex w-full items-center justify-between gap-3 py-3.5 text-left transition hover:text-[var(--text)]"
       >
-        <span className="text-sm text-[var(--dim)]">{title}</span>
-        <span className="flex items-center gap-2 font-[family-name:var(--font-mono)] text-[13px] text-[var(--faint)]">
+        <span className="text-[15px] text-[var(--text)]">{title}</span>
+        <span className="flex items-center gap-2 font-mono text-[13px] text-[var(--faint)]">
           {count !== undefined && <span>{count}</span>}
           <span className={`transition-transform ${open === k ? "rotate-45" : ""}`}>+</span>
         </span>
@@ -31,7 +31,7 @@ export default function VerdictDetails({ record }: { record: VerdictRecord }) {
   );
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col border-t border-[var(--text)]">
       <Row k="why" title="Why, in full">
         <p className="max-w-[68ch]">{verdict.why}.</p>
         <p className="mt-3 max-w-[68ch] text-[var(--text)]">{verdict.whatWouldChangeThis}</p>
@@ -42,7 +42,7 @@ export default function VerdictDetails({ record }: { record: VerdictRecord }) {
           {verdict.deciding.map((d) => (
             <li key={d.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <span className="text-[var(--text)]">{d.label}</span>
-              <span className="font-[family-name:var(--font-mono)] text-[13px] tabular-nums text-[var(--faint)]">
+              <span className="font-mono text-[13px] tabular-nums text-[var(--faint)]">
                 {d.reading} · {Math.round(d.certainty * 100)}%
               </span>
             </li>
@@ -72,10 +72,10 @@ export default function VerdictDetails({ record }: { record: VerdictRecord }) {
       <Row k="work" title="Show your work">
         <p className="mb-3 max-w-[68ch]">
           The exact state sent, every question asked, and every answer returned. One request,
-          model <span className="font-[family-name:var(--font-mono)] text-[var(--text)]">{verdict.modelVersion}</span>.
+          model <span className="font-mono text-[var(--text)]">{verdict.modelVersion}</span>.
           These weaknesses are specific to that version.
         </p>
-        <pre className="max-h-[28rem] overflow-auto rounded-xl border border-[var(--line-soft)] bg-[var(--bg)] p-4 font-[family-name:var(--font-mono)] text-[12px] leading-relaxed text-[var(--dim)]">
+        <pre className="max-h-[28rem] overflow-auto border border-[var(--line)] bg-[var(--bg-lift)] p-4 font-mono text-[12px] leading-relaxed text-[var(--dim)]">
 {JSON.stringify({ state: work.state, questions: work.questions, answers: work.answers }, null, 2)}
         </pre>
       </Row>

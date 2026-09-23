@@ -41,43 +41,40 @@ export function read(id: string, a: Answer): Reading {
   return { text: a.choice.replace(/_/g, " "), value: a.confidence, fired: false, kind: "choice" };
 }
 
-function Tile({ id, answer, index }: { id: string; answer?: Answer; index: number }) {
+function Row({ id, answer, index }: { id: string; answer?: Answer; index: number }) {
   const reduce = useReducedMotion();
   const r = answer ? read(id, answer) : null;
+  const ink = r?.fired ? "var(--v-ml)" : "var(--text)";
 
   return (
     <motion.li
-      initial={reduce ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: reduce ? 0 : index * 0.035, type: "spring", stiffness: 260, damping: 24 }}
-      className="relative overflow-hidden rounded-xl border bg-[var(--bg-lift)] px-3 py-2.5"
-      style={{ borderColor: r?.fired ? "rgb(255 122 156 / 0.45)" : "var(--line-soft)" }}
+      initial={reduce ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: reduce ? 0 : index * 0.03, duration: 0.25 }}
+      className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 pb-1.5 pt-2.5"
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[13px] leading-tight text-[var(--dim)]">{TILE_LABEL[id] ?? id}</span>
-        {r ? (
-          <motion.span
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: reduce ? 0 : index * 0.035 + 0.08 }}
-            className="shrink-0 font-[family-name:var(--font-mono)] text-[13px] tabular-nums"
-            style={{ color: r.fired ? "var(--v-ml)" : "var(--text)" }}
-          >
-            {r.text}
-          </motion.span>
-        ) : (
-          <span className="h-3 w-8 shrink-0 animate-pulse rounded bg-[var(--line)]" />
-        )}
-      </div>
+      <span className="flex items-baseline gap-2 text-[14px] text-[var(--dim)]">
+        <span className="w-3 shrink-0 font-mono text-[12px]" style={{ color: ink }} aria-hidden>
+          {r?.fired ? "✕" : ""}
+        </span>
+        {TILE_LABEL[id] ?? id}
+      </span>
+      {r ? (
+        <span className="font-mono text-[13px] tabular-nums" style={{ color: ink }}>
+          {r.text}
+        </span>
+      ) : (
+        <span className="h-3 w-10 animate-pulse bg-[var(--line)]" />
+      )}
 
-      {/* A hairline, not a filled track: the bar is the number, said again. */}
-      <div className="mt-2 h-px w-full bg-[var(--line)]">
+      {/* A hairline under the label: the bar is the number, said again. */}
+      <div className="col-span-2 ml-5 mt-1.5 h-px bg-[var(--line-soft)]">
         <motion.div
           className="h-px origin-left"
-          style={{ background: r?.fired ? "var(--v-ml)" : "var(--accent)" }}
+          style={{ background: r?.fired ? "var(--v-ml)" : "var(--text)" }}
           initial={{ scaleX: 0 }}
           animate={{ scaleX: r ? Math.max(r.value, 0.02) : 0 }}
-          transition={{ delay: reduce ? 0 : index * 0.035 + 0.05, duration: reduce ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ delay: reduce ? 0 : index * 0.03 + 0.05, duration: reduce ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
         />
       </div>
     </motion.li>
@@ -93,16 +90,19 @@ export default function JudgmentGrid({
 }) {
   let i = 0;
   return (
-    <div className="flex flex-col gap-7">
-      {GROUPS.map((g) => (
+    <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
+      {GROUPS.map((g, n) => (
         <section key={g.title}>
-          <div className="mb-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h3 className="text-sm font-medium">{g.title}</h3>
+          <div className="mb-1 flex flex-col gap-0.5 border-b border-[var(--text)] pb-2">
+            <h4 className="flex items-baseline gap-2 text-sm font-medium">
+              <span className="font-mono text-[11px] text-[var(--faint)]">{String.fromCharCode(65 + n)}</span>
+              {g.title}
+            </h4>
             <p className="text-[13px] text-[var(--faint)]">{g.note}</p>
           </div>
-          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <ul>
             {g.ids.map((id) => (
-              <Tile key={id} id={id} answer={pending ? undefined : answers?.[id]} index={i++} />
+              <Row key={id} id={id} answer={pending ? undefined : answers?.[id]} index={i++} />
             ))}
           </ul>
         </section>
