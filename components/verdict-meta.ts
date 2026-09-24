@@ -123,14 +123,6 @@ export const EXAMPLES: { label: string; text: string }[] = [
     label: "Changelog to tweet",
     text: "Turn a list of merged pull request titles into one tweet announcing what we shipped.",
   },
-  {
-    label: "Trial ending email",
-    text: "Send the user a reminder email three days before their free trial ends.",
-  },
-  {
-    label: "Add AI to my SaaS",
-    text: "I want to add AI to my SaaS so it feels smarter and people stop churning.",
-  },
 ];
 
 /**
