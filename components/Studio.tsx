@@ -261,7 +261,7 @@ export default function Studio({ initial }: { initial?: VerdictRecord }) {
 
               {phase === "done" && record && (
                 <div className="flex flex-col gap-3">
-                  <VerdictBanner verdict={record.verdict} answers={record.work.answers} />
+                  <VerdictBanner verdict={record.verdict} answers={record.work.answers} as={initial ? "h1" : "h2"} />
                   <div className="flex flex-wrap items-center gap-2.5 text-sm">
                     <a
                       href={`https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(
