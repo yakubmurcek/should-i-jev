@@ -132,6 +132,9 @@ const VETO_VERDICT: Record<VetoId, VerdictKind> = {
  */
 const VETO_MAY_BE_ML: VetoId[] = ["needs_temporal_reasoning", "needs_numeric_comparison"];
 
+/** Vetoes that fire on a quantity Jev cannot read: a count, a date, a magnitude. */
+const QUANTITY_VETOES: VetoId[] = ["needs_arithmetic", "needs_temporal_reasoning", "needs_numeric_comparison"];
+
 const VETO_WHY: Record<VetoId, string> = {
   deterministic_rule_exists:
     "an exact rule decides this, and a rule you can read beats a judgment you have to trust",
@@ -406,8 +409,19 @@ export function composeVerdict(
   const consequence = require_(answers, "high_consequence", isNoul);
   const consequenceFires = bandNoul(consequence.noul) === "fires";
 
+  // When the output IS written prose, a quantity veto is not the deciding fact:
+  // "every Friday" or "last 30 days" is scaffolding code does around the call,
+  // and the job is still the writing. Measured need: "every Friday, turn merged
+  // PRs into a changelog post and a tweet" fired the temporal veto and was told
+  // to just write code. An exact rule still wins over generation.
+  const writesProse =
+    firing.includes("needs_generation") &&
+    require_(answers, "output_shape", isChoice).choice === "free_prose";
   const blocking = firing.filter(
-    (id) => id !== "needs_generation" && !NEVER_VETO.includes(id),
+    (id) =>
+      id !== "needs_generation" &&
+      !NEVER_VETO.includes(id) &&
+      !(writesProse && QUANTITY_VETOES.includes(id)),
   );
   if (blocking.length > 0) {
     const winner = blocking[0]!; // VETO_PRECEDENCE order is preserved
@@ -419,22 +433,34 @@ export function composeVerdict(
     // the answer is a trained model, not an if.
     const labelled = require_(answers, "labelled_outcomes_exist", isNoul);
     const volumeNow = require_(answers, "repeated_at_volume", isNoul);
-    if (
-      VETO_MAY_BE_ML.includes(winner) &&
-      bandNoul(labelled.noul) === "fires" &&
-      bandNoul(volumeNow.noul) === "fires"
-    ) {
-      consume(ctx, "labelled_outcomes_exist", "yes", 0.9);
+    // A date or magnitude veto with no exact rule behind it is a prediction, not
+    // a computation: "from 90 days of logins and usage, predict who cancels"
+    // fired the arithmetic and temporal vetoes and was told to just write code,
+    // though no rule exists to write. With volume, and outcomes not known to be
+    // missing, that is a model trained on history. Counting alone never gets
+    // here: a tally is exactly computable.
+    const labelledBand = bandNoul(labelled.noul);
+    const noRule =
+      bandNoul(require_(answers, "deterministic_rule_exists", isNoul).noul) === "does_not_fire";
+    const learnsFromLabels = VETO_MAY_BE_ML.includes(winner) && labelledBand === "fires";
+    const predictsFromHistory =
+      blocking.some((id) => VETO_MAY_BE_ML.includes(id)) && noRule && labelledBand !== "does_not_fire";
+    if ((learnsFromLabels || predictsFromHistory) && bandNoul(volumeNow.noul) === "fires") {
+      consume(ctx, "labelled_outcomes_exist", noulReading("labelled_outcomes_exist", labelled.noul), 0.9);
       consume(ctx, "repeated_at_volume", "yes", 0.6);
       return finish(ctx, {
         specificityLevel,
         kind: "classical_ml",
-        why: `${VETO_WHY[winner]} — but you have labelled outcomes at volume, and a model trained on them reads exactly the quantity a typed judgment cannot`,
+        why:
+          labelledBand === "fires"
+            ? `${VETO_WHY[winner]} — but you have labelled outcomes at volume, and a model trained on them reads exactly the quantity a typed judgment cannot`
+            : `${VETO_WHY[winner]}, and no exact rule decides it, so this is a prediction: at this volume, a model trained on past outcomes reads exactly the quantity a typed judgment cannot`,
         whatWouldChangeThis:
           "What would change this: the labels. Without outcomes already recorded there is nothing to train on, and this falls back to computing it in code.",
         modelVersion,
         fitScore: null,
-        provisional: false,
+        // Labels that are only probably there make this a lean, not a ruling.
+        provisional: bandNoul(labelled.noul) !== "fires",
       });
     }
 
@@ -457,6 +483,9 @@ export function composeVerdict(
   // into "Not enough to judge" naming the dimension. A veto that fires outright
   // is definite knowledge and has already won above.
   for (const id of VETO_PRECEDENCE) {
+    // Writing fresh prose outright already rules out a template or a schedule
+    // as the answer, so a coin-flip on either cannot withhold the verdict.
+    if (writesProse && (id === "deterministic_rule_exists" || QUANTITY_VETOES.includes(id))) continue;
     if (NEVER_VETO.includes(id)) continue; // it cannot disqualify, so its
     const a = require_(answers, id, isNoul); // uncertainty cannot withhold
     if (bandNoul(a.noul) === "uncertain") consume(ctx, id, "as likely as not", 1);

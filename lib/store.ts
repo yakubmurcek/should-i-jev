@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { Redis } from "@upstash/redis";
 import { MODEL } from "@/lib/jev/client";
 import { normalize } from "@/lib/state";
+import { composeVerdict } from "@/lib/compose";
 import type { VerdictRecord } from "@/lib/verdict";
 
 /**
@@ -57,8 +58,21 @@ function memGet<T>(key: string): T | null {
 export async function getVerdict(id: string): Promise<VerdictRecord | null> {
   const key = `verdict:${id}`;
   const kv = client();
-  if (!kv) return memGet<VerdictRecord>(key);
-  return (await kv.get<VerdictRecord>(key)) ?? null;
+  const record = kv ? ((await kv.get<VerdictRecord>(key)) ?? null) : memGet<VerdictRecord>(key);
+  return record && recompose(record);
+}
+
+/**
+ * The cache holds Jev's answers, which cost an inference. The verdict on top of
+ * them is local, deterministic logic, so it is rebuilt on every read: a fix to
+ * composition reaches every shared link at once instead of waiting out the TTL.
+ */
+function recompose(record: VerdictRecord): VerdictRecord {
+  try {
+    return { ...record, verdict: composeVerdict(record.work.answers, record.verdict.modelVersion) };
+  } catch {
+    return record; // answers from an older question set: keep what was stored
+  }
 }
 
 export async function putVerdict(record: VerdictRecord): Promise<void> {
