@@ -42,7 +42,7 @@ export function read(id: string, a: Answer): Reading {
 }
 
 /** Each group gets its own paint, so the four sections read apart at a glance. */
-const GROUP_COLOR = ["var(--v-ml)", "var(--v-llm)", "var(--v-code)", "var(--v-both)"];
+const GROUP_COLOR = ["var(--v-ml)", "var(--v-llm)", "var(--blue)", "var(--v-both)"];
 
 function Row({ id, answer, index, color }: { id: string; answer?: Answer; index: number; color: string }) {
   const reduce = useReducedMotion();

@@ -19,14 +19,17 @@
   --accent: #ffd23f;
   --accent-ink: #0f0f0f;
 
-  /* Verdict colours are semantic state. Flat paint, read with dark ink on top. */
+  /* Verdict colours are semantic state. Flat paint, read with dark ink on top.
+     The three "don't use Jev" outcomes share a warning family: red, orange, pink. */
   --v-fits: #3ddc84;
-  --v-code: #5aa9ff;
+  --v-code: #ff5540;
   --v-llm: #ff9a3c;
   --v-both: #b08cff;
   --v-ml: #ff5f8f;
   --v-unknown: #c9c4b8;
   --on-color: #0f0f0f;
+  /* Non-verdict blue: Jev's Choice primitive and a judgment group. */
+  --blue: #5aa9ff;
 
   color-scheme: dark;
 }

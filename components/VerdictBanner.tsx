@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import type { Verdict } from "@/lib/verdict";
 import type { Answer } from "@/lib/jev/types";
 import { read } from "@/components/JudgmentGrid";
-import { TILE_LABEL, VERDICT_COLOR, VERDICT_GIST } from "@/components/verdict-meta";
+import { STAMP, TILE_LABEL, VERDICT_COLOR } from "@/components/verdict-meta";
 
 /** The answer, readable in about two seconds. Everything else is below it. */
 export default function VerdictBanner({
@@ -36,10 +36,10 @@ export default function VerdictBanner({
       </span>
       <div className="flex flex-col gap-3">
         <Heading className="text-[3.2rem] font-extrabold leading-[0.9] tracking-[-0.04em] sm:text-8xl">
-          {verdict.headline}
+          {STAMP[verdict.kind].headline}
         </Heading>
         <p className="max-w-[40ch] text-xl font-bold leading-snug sm:text-2xl">
-          {VERDICT_GIST[verdict.kind]}
+          {STAMP[verdict.kind].sub}
         </p>
         <p className="max-w-[66ch] text-[15px] font-medium leading-relaxed opacity-75">
           {verdict.why.charAt(0).toUpperCase() + verdict.why.slice(1)}.

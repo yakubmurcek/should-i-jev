@@ -3,15 +3,15 @@ import Masthead from "@/components/Masthead";
 import MadeBy from "@/components/MadeBy";
 import Studio from "@/components/Studio";
 import { getVerdict } from "@/lib/store";
-import { VERDICT_GIST } from "@/components/verdict-meta";
+import { STAMP } from "@/components/verdict-meta";
 import { OG_BASE, SITE_NAME, TWITTER_BASE, clip } from "@/lib/site";
 
 export async function generateMetadata({ params }: { params: Promise<{ hash: string }> }) {
   const { hash } = await params;
   const record = await getVerdict(hash);
   if (!record) return { title: "Verdict not found" };
-  const title = `${record.verdict.headline} · ${SITE_NAME}`;
-  const gist = VERDICT_GIST[record.verdict.kind];
+  const { headline, sub: gist } = STAMP[record.verdict.kind];
+  const title = `${headline.replace(/\.$/, "")} · ${SITE_NAME}`;
   // Kept under 155 chars so search and share previews show it whole.
   const description = `"${clip(record.description, 155 - gist.length - 4)}" ${gist}`;
   const url = `/v/${hash}`;
@@ -32,8 +32,8 @@ export default async function VerdictPage({ params }: { params: Promise<{ hash: 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: `${record.verdict.headline} · ${SITE_NAME}`,
-    description: `${clip(record.description, 200)} ${VERDICT_GIST[record.verdict.kind]}`,
+    name: `${STAMP[record.verdict.kind].headline} ${STAMP[record.verdict.kind].sub}`,
+    description: `${clip(record.description, 200)} ${STAMP[record.verdict.kind].sub}`,
     isPartOf: { "@type": "WebSite", name: SITE_NAME },
   };
 
