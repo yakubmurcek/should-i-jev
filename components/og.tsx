@@ -35,7 +35,7 @@ const SITE = "shouldijev.vercel.app";
 /** Same six semantic colours as the app, inlined: Satori cannot read CSS vars. */
 export const OG_COLOR: Record<VerdictKind, string> = {
   jev_fits: "#3ddc84",
-  just_write_code: "#5aa9ff",
+  just_write_code: "#ff5540",
   use_an_llm: "#ff9a3c",
   jev_plus_llm: "#b08cff",
   classical_ml: "#ff5f8f",

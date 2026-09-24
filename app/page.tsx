@@ -11,7 +11,7 @@ import { VERDICT_HEADLINES } from "@/lib/verdict";
 const PRIMITIVES = [
   {
     name: "Choice",
-    color: "var(--v-code)",
+    color: "var(--blue)",
     asks: "Which queue does this email belong in?",
     answer: `{ choice: "refund", confidence: 0.94 }`,
   },
