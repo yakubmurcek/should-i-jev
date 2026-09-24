@@ -42,6 +42,36 @@ export async function track(event: StatEvent, ip: string): Promise<void> {
   }
 }
 
+/**
+ * Your own use is not usage. A browser is marked as the owner's by opening
+ * /api/owner?key=<STATS_KEY> once; the cookie holds a hash of the key, so it
+ * cannot be forged without it. curl is also treated as the owner: visitors use
+ * the page, only you and your agents hit the API by hand.
+ */
+export const OWNER_COOKIE = "sij_owner";
+
+export function ownerToken(): string | null {
+  const key = process.env.STATS_KEY;
+  return key ? createHash("sha256").update(`owner:${key}`).digest("hex").slice(0, 32) : null;
+}
+
+export function isOwner(req: Request): boolean {
+  if (/^curl\//i.test(req.headers.get("user-agent") ?? "")) return true;
+  const token = ownerToken();
+  if (!token) return false;
+  const cookies = req.headers.get("cookie") ?? "";
+  return cookies.split(/;\s*/).includes(`${OWNER_COOKIE}=${token}`);
+}
+
+/** Your verdicts stay in the cache (links keep working) but leave the stats list. */
+export async function markOwnerVerdict(id: string): Promise<void> {
+  try {
+    await client()?.sadd("stats:owner_ids", id);
+  } catch (err) {
+    console.warn("[stats] owner mark failed", err);
+  }
+}
+
 export function clientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
   return fwd?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
@@ -54,7 +84,7 @@ export type Stats = {
   visitors: number;
   triers: number;
   days: DayRow[];
-  recent: { id: string; description: string; createdAt: string; kind?: string }[];
+  recent: { id: string; description: string; createdAt: string; kind?: string; mine: boolean }[];
 };
 
 const toCounts = (h: Record<string, unknown> | null): Counts =>
@@ -68,6 +98,7 @@ export async function readStats(days = 30): Promise<Stats | null> {
     new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10),
   );
 
+  const owned = new Set(await kv.smembers("stats:owner_ids"));
   const [total, visitors, triers, ...rows] = await Promise.all([
     kv.hgetall<Record<string, unknown>>("stats:total"),
     kv.pfcount("stats:visitors:all"),
@@ -92,7 +123,7 @@ export async function readStats(days = 30): Promise<Stats | null> {
   const recent = records
     .filter((r): r is VerdictRecord => !!r)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((r) => ({ id: r.id, description: r.description, createdAt: r.createdAt, kind: r.verdict?.kind }));
+    .map((r) => ({ id: r.id, description: r.description, createdAt: r.createdAt, kind: r.verdict?.kind, mine: owned.has(r.id) }));
 
   return {
     total: toCounts(total),
