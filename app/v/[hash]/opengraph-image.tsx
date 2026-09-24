@@ -2,6 +2,8 @@ import { ImageResponse } from "next/og";
 import { DefaultCardImage, OG_SIZE, VerdictCardImage, ogFonts } from "@/components/og";
 import { getVerdict } from "@/lib/store";
 
+// Edits here change the image URL's ?hash, which makes X fetch the card again. X
+// keeps a failed first fetch per image URL, so that is the way to repair a stuck card.
 export const runtime = "nodejs";
 export const alt = "A verdict on whether a described feature fits Jev.";
 export const size = OG_SIZE;
