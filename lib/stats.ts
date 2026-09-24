@@ -20,25 +20,62 @@ const day = () => new Date().toISOString().slice(0, 10);
 // Only a hash of the address is kept; it is enough to count distinct visitors.
 const visitor = (ip: string) => createHash("sha256").update(`should-i-jev:${ip}`).digest("hex").slice(0, 16);
 
+/**
+ * The owner's own use goes to a parallel set of keys under stats:mine:, so the
+ * stats page can show it or leave it out without losing either.
+ */
+const prefix = (mine: boolean) => (mine ? "stats:mine:" : "stats:");
+
 /** Never throws: a counter must not take a verdict down with it. */
-export async function track(event: StatEvent, ip: string): Promise<void> {
+export async function track(event: StatEvent, ip: string, mine = false): Promise<void> {
   const kv = client();
   if (!kv) return;
   const d = day();
   const v = visitor(ip);
+  const k = prefix(mine);
   try {
     const p = kv.pipeline();
-    p.hincrby(`stats:day:${d}`, event, 1);
-    p.hincrby("stats:total", event, 1);
-    p.pfadd(`stats:visitors:${d}`, v);
-    p.pfadd("stats:visitors:all", v);
+    p.hincrby(`${k}day:${d}`, event, 1);
+    p.hincrby(`${k}total`, event, 1);
+    p.pfadd(`${k}visitors:${d}`, v);
+    p.pfadd(`${k}visitors:all`, v);
     if (event === "new" || event === "cached") {
-      p.pfadd(`stats:triers:${d}`, v);
-      p.pfadd("stats:triers:all", v);
+      p.pfadd(`${k}triers:${d}`, v);
+      p.pfadd(`${k}triers:all`, v);
     }
     await p.exec();
   } catch (err) {
     console.warn("[stats] track failed", err);
+  }
+}
+
+/**
+ * Your own use is not usage. A browser is marked as the owner's by opening
+ * /api/owner?key=<STATS_KEY> once; the cookie holds a hash of the key, so it
+ * cannot be forged without it. curl is also treated as the owner: visitors use
+ * the page, only you and your agents hit the API by hand.
+ */
+export const OWNER_COOKIE = "sij_owner";
+
+export function ownerToken(): string | null {
+  const key = process.env.STATS_KEY;
+  return key ? createHash("sha256").update(`owner:${key}`).digest("hex").slice(0, 32) : null;
+}
+
+export function isOwner(req: Request): boolean {
+  if (/^curl\//i.test(req.headers.get("user-agent") ?? "")) return true;
+  const token = ownerToken();
+  if (!token) return false;
+  const cookies = req.headers.get("cookie") ?? "";
+  return cookies.split(/;\s*/).includes(`${OWNER_COOKIE}=${token}`);
+}
+
+/** Your verdicts stay in the cache (links keep working) but leave the stats list. */
+export async function markOwnerVerdict(id: string): Promise<void> {
+  try {
+    await client()?.sadd("stats:owner_ids", id);
+  } catch (err) {
+    console.warn("[stats] owner mark failed", err);
   }
 }
 
@@ -54,13 +91,19 @@ export type Stats = {
   visitors: number;
   triers: number;
   days: DayRow[];
-  recent: { id: string; description: string; createdAt: string; kind?: string }[];
+  recent: { id: string; description: string; createdAt: string; kind?: string; mine: boolean }[];
 };
 
 const toCounts = (h: Record<string, unknown> | null): Counts =>
   Object.fromEntries(Object.entries(h ?? {}).map(([k, v]) => [k, Number(v)]));
 
-export async function readStats(days = 30): Promise<Stats | null> {
+const addCounts = (a: Counts, b: Counts): Counts => {
+  const out: Counts = { ...a };
+  for (const [k, v] of Object.entries(b)) out[k as StatEvent] = (out[k as StatEvent] ?? 0) + (v ?? 0);
+  return out;
+};
+
+export async function readStats(includeMine = false, days = 30): Promise<Stats | null> {
   const kv = client();
   if (!kv) return null;
 
@@ -68,15 +111,24 @@ export async function readStats(days = 30): Promise<Stats | null> {
     new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10),
   );
 
+  const owned = new Set(await kv.smembers("stats:owner_ids"));
+  const sets = includeMine ? [prefix(false), prefix(true)] : [prefix(false)];
+  // Counts add up across the two sets; distinct visitors are a HyperLogLog union.
+  const counts = async (key: string) => {
+    const hs = await Promise.all(sets.map((p) => kv.hgetall<Record<string, unknown>>(`${p}${key}`)));
+    return hs.map(toCounts).reduce(addCounts, {});
+  };
+  const distinct = (key: string) => kv.pfcount(...(sets.map((p) => `${p}${key}`) as [string, ...string[]]));
+
   const [total, visitors, triers, ...rows] = await Promise.all([
-    kv.hgetall<Record<string, unknown>>("stats:total"),
-    kv.pfcount("stats:visitors:all"),
-    kv.pfcount("stats:triers:all"),
+    counts("total"),
+    distinct("visitors:all"),
+    distinct("triers:all"),
     ...dates.map(async (d) => ({
       day: d,
-      counts: toCounts(await kv.hgetall<Record<string, unknown>>(`stats:day:${d}`)),
-      visitors: await kv.pfcount(`stats:visitors:${d}`),
-      triers: await kv.pfcount(`stats:triers:${d}`),
+      counts: await counts(`day:${d}`),
+      visitors: await distinct(`visitors:${d}`),
+      triers: await distinct(`triers:${d}`),
     })),
   ]);
 
@@ -92,10 +144,10 @@ export async function readStats(days = 30): Promise<Stats | null> {
   const recent = records
     .filter((r): r is VerdictRecord => !!r)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((r) => ({ id: r.id, description: r.description, createdAt: r.createdAt, kind: r.verdict?.kind }));
+    .map((r) => ({ id: r.id, description: r.description, createdAt: r.createdAt, kind: r.verdict?.kind, mine: owned.has(r.id) }));
 
   return {
-    total: toCounts(total),
+    total: total as Counts,
     visitors,
     triers,
     days: (rows as DayRow[]).filter((r) => Object.keys(r.counts).length > 0),
