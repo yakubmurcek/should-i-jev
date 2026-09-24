@@ -7,16 +7,19 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Stats", robots: { index: false, follow: false } };
 
 /** Private usage page. Without the right ?key= it does not exist. */
-export default async function StatsPage({ searchParams }: { searchParams: Promise<{ key?: string }> }) {
-  const { key } = await searchParams;
+export default async function StatsPage({ searchParams }: { searchParams: Promise<{ key?: string; mine?: string }> }) {
+  const { key, mine } = await searchParams;
+  const includeMine = mine === "1";
   if (!process.env.STATS_KEY || key !== process.env.STATS_KEY) notFound();
 
-  const stats = await readStats();
+  const stats = await readStats(includeMine);
   const marked = (await cookies()).get(OWNER_COOKIE)?.value === ownerToken();
   if (!stats) return <main className="p-6 font-mono">No KV configured, nothing is counted.</main>;
 
   const others = stats.recent.filter((r) => !r.mine);
   const mineCount = stats.recent.length - others.length;
+  const shown = includeMine ? stats.recent : others;
+  const toggleHref = `/stats?key=${encodeURIComponent(key)}${includeMine ? "" : "&mine=1"}`;
 
   const tiles: [string, number | undefined][] = [
     ["people who tried it", stats.triers],
@@ -33,12 +36,26 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       <h1 className="font-sans text-2xl font-bold">Usage</h1>
       <p className="opacity-60">
         Counters started {stats.days.at(-1)?.day ?? "today"}. Ideas below go back 30 days (verdict cache lifetime).
-        Your own visits and verdicts are left out.
       </p>
+      <a
+        href={toggleHref}
+        role="switch"
+        aria-checked={includeMine}
+        className="inline-flex items-center gap-3 rounded border border-current/30 px-3 py-2"
+      >
+        <span
+          className={`relative h-5 w-9 rounded-full transition-colors ${includeMine ? "bg-current" : "bg-current/20"}`}
+        >
+          <span
+            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${includeMine ? "left-[18px]" : "left-0.5"}`}
+          />
+        </span>
+        Include my own use
+      </a>
       {!marked && (
         <p className="rounded border border-current/40 p-3">
-          This browser is not marked as yours, so its visits count.{" "}
-          <a className="underline" href={`/api/owner?key=${encodeURIComponent(key)}`}>Stop counting me here</a>
+          This browser is not marked as yours, so its visits count as a stranger's.{" "}
+          <a className="underline" href={`/api/owner?key=${encodeURIComponent(key)}`}>Mark this browser as mine</a>
         </p>
       )}
 
@@ -50,8 +67,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           </div>
         ))}
         <div className="rounded border border-current/20 p-3">
-          <div className="text-2xl font-bold">{others.length}</div>
-          <div className="opacity-60">ideas from others (30d)</div>
+          <div className="text-2xl font-bold">{shown.length}</div>
+          <div className="opacity-60">{includeMine ? "ideas judged (30d)" : "ideas from others (30d)"}</div>
         </div>
       </section>
 
@@ -74,12 +91,12 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
       <section>
         <h2 className="mb-2 font-sans text-lg font-bold">What people asked</h2>
-        <p className="mb-3 opacity-60">{mineCount} of yours hidden.</p>
-        {others.length === 0 && <p>Nobody else yet.</p>}
+        {!includeMine && <p className="mb-3 opacity-60">{mineCount} of yours hidden.</p>}
+        {shown.length === 0 && <p>Nobody else yet.</p>}
         <ul className="space-y-3">
-          {others.map((r) => (
+          {shown.map((r) => (
             <li key={r.id}>
-              <span className="opacity-60">{r.createdAt.slice(0, 16).replace("T", " ")} · {r.kind}</span>{" "}
+              <span className="opacity-60">{r.createdAt.slice(0, 16).replace("T", " ")} · {r.kind}{r.mine ? " · you" : ""}</span>{" "}
               <a className="underline" href={`/v/${r.id}`}>open</a>
               <div className="font-sans">{r.description}</div>
             </li>

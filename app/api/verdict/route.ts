@@ -22,12 +22,10 @@ function fail(status: number, code: Code, error: string, detail?: string) {
 
 export async function POST(req: Request) {
   const res = await judge(req);
-  if (isOwner(req)) {
-    if (res.status === 200) {
-      const { id } = (await res.clone().json()) as { id: string };
-      after(() => markOwnerVerdict(id));
-    }
-    return res;
+  const mine = isOwner(req);
+  if (mine && res.status === 200) {
+    const { id } = (await res.clone().json()) as { id: string };
+    after(() => markOwnerVerdict(id));
   }
   const event: StatEvent | null =
     res.status === 200 ? ((await res.clone().json()).cached ? "cached" : "new")
@@ -36,7 +34,7 @@ export async function POST(req: Request) {
     : null; // 4xx input errors are the visitor's typing, not usage
   if (event) {
     const ip = clientIp(req);
-    after(() => track(event, ip));
+    after(() => track(event, ip, mine));
   }
   return res;
 }
