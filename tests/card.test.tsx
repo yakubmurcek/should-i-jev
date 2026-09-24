@@ -3,13 +3,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import VerdictBanner from "@/components/VerdictBanner";
 import VerdictDetails from "@/components/VerdictDetails";
 import JudgmentGrid from "@/components/JudgmentGrid";
-import { GROUPS, VERDICT_GIST } from "@/components/verdict-meta";
+import { GROUPS, STAMP } from "@/components/verdict-meta";
 import { DefaultCardImage, OG_COLOR, VerdictCardImage, clamp } from "@/components/og";
 import { composeVerdict } from "@/lib/compose";
 import { QUESTIONS, QUESTION_IDS } from "@/lib/questions";
 import { buildState } from "@/lib/state";
 import type { VerdictRecord } from "@/lib/verdict";
 import { FIXTURES } from "./fixtures";
+
+/** React escapes the apostrophe in "Don't use Jev." */
+const esc = (t: string) => t.replace(/'/g, "&#x27;");
 
 const recordFor = (f: (typeof FIXTURES)[number]): VerdictRecord => ({
   id: f.id,
@@ -29,8 +32,8 @@ describe("the verdict is readable at a glance", () => {
         renderToStaticMarkup(<VerdictDetails record={record} />);
 
       // The headline and its one-line read carry the answer on their own.
-      expect(html).toContain(record.verdict.headline);
-      expect(html).toContain(VERDICT_GIST[record.verdict.kind]);
+      expect(html).toContain(esc(STAMP[record.verdict.kind].headline));
+      expect(html).toContain(esc(STAMP[record.verdict.kind].sub));
       // The detail is reachable but folded: the panels are closed on arrival,
       // so what must be present up front is the way in, not the contents.
       for (const panel of ["Why, in full", "What decided it", "What it assumed", "Show your work"]) {
@@ -63,11 +66,20 @@ describe("the judgment grid shows every question", () => {
   });
 });
 
+describe("the stamp", () => {
+  it("leads with the refusal whenever the answer is not Jev", () => {
+    for (const kind of ["just_write_code", "use_an_llm", "classical_ml"] as const) {
+      expect(STAMP[kind].headline).toBe("Don't use Jev.");
+    }
+    expect(STAMP.jev_fits.headline).toBe("Jev fits");
+  });
+});
+
 describe("the share card", () => {
   it("renders for every fixture, including the ones that say no", () => {
     for (const f of FIXTURES) {
       const html = renderToStaticMarkup(<VerdictCardImage record={recordFor(f)} />);
-      expect(html).toContain(recordFor(f).verdict.headline);
+      expect(html).toContain(esc(STAMP[recordFor(f).verdict.kind].headline));
       // Real judgments on the card, not just the conclusion.
       expect(html).toContain("a rule covers it");
     }
