@@ -331,12 +331,51 @@ describe("a veto says Jev is out, not that code is in", () => {
   });
 
   it("never trains a model to approximate an exact rule", () => {
-    // deterministic_rule_exists and needs_arithmetic are exactly computable,
-    // so labels must not pull them away from code.
-    for (const veto of ["deterministic_rule_exists", "needs_arithmetic"]) {
-      const v = compose(withAnswers({ ...trial, [veto]: noul(0.9) }));
-      expect(v.kind, `${veto} became ${v.kind}`).toBe("just_write_code");
-    }
+    // An exact rule is exactly computable, so labels must not pull it away
+    // from code, even with a date veto firing alongside.
+    const v = compose(withAnswers({ ...trial, deterministic_rule_exists: noul(0.9) }));
+    expect(v.kind, `rule became ${v.kind}`).toBe("just_write_code");
+    // Nor does a tally on its own: counting is computable, labels or not.
+    const { needs_temporal_reasoning: _, ...labelsOnly } = trial;
+    const tally = compose(withAnswers({ ...labelsOnly, needs_arithmetic: noul(0.9) }));
+    expect(tally.kind, `tally became ${tally.kind}`).toBe("just_write_code");
+  });
+
+  describe("a date-and-count prediction with no rule behind it", () => {
+    // Measured: "from 90 days of logins, usage and plan, predict who cancels
+    // next month" fired arithmetic and temporal and came back just_write_code,
+    // though no rule exists to write.
+    const churn = {
+      needs_arithmetic: noul(0.78),
+      needs_temporal_reasoning: noul(0.97),
+      deterministic_rule_exists: noul(0.23),
+      repeated_at_volume: noul(0.79),
+    };
+
+    it("is classical ML when past outcomes are on record", () => {
+      const v = compose(withAnswers({ ...churn, labelled_outcomes_exist: noul(0.9) }));
+      expect(v.kind, `why: ${v.why}`).toBe("classical_ml");
+    });
+
+    it("asks about the labels, never says code, when they are a coin-flip", () => {
+      const v = compose(withAnswers({ ...churn, labelled_outcomes_exist: noul(0.42) }));
+      expect(v.kind, `why: ${v.why}`).toBe("not_enough_to_judge");
+      expect(v.why).toMatch(/labelled/i);
+    });
+  });
+
+  it("keeps a schedule from hiding that the job is writing", () => {
+    // Measured: "every Friday, turn merged PRs into a changelog post and a
+    // tweet" fired the temporal veto and came back just_write_code.
+    const v = compose(
+      withAnswers({
+        needs_generation: noul(0.94),
+        needs_temporal_reasoning: noul(0.79),
+        deterministic_rule_exists: noul(0.51),
+        output_shape: { type: "choice", choice: "free_prose", confidence: 0.99, probabilities: { free_prose: 0.99 } },
+      }),
+    );
+    expect(v.kind, `why: ${v.why}`).toBe("use_an_llm");
   });
 });
 
