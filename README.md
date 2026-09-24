@@ -64,7 +64,10 @@ answers are narrow and `lib/compose.ts` composes the verdict from them:
 2. **Seven vetoes**, before any weighting. A strong fit score cannot outvote
    "Jev cannot generate text". A veto rules Jev out; it does not rule code in.
    When it fired on a quantity and you already have labelled outcomes at
-   volume, the fallback is a trained model, not an `if`.
+   volume, the fallback is a trained model, not an `if`. A date or magnitude
+   veto with no exact rule behind it is a prediction, so it never falls back to
+   code. And when the output is written prose, a schedule or a count around it
+   does not decide anything: the writing is the job.
 3. **Composite** over banded answers and score levels.
 4. **Consequence adjustment** — high consequence does not change the verdict, it
    raises the bar required to state it.
@@ -194,7 +197,9 @@ and the `parallel_questions` cookbook. What the audit changed:
   return prose at all, so no weighting rescues it.
 
 Nineteen questions, 2,872 input tokens per request (+2.4% for the two added
-questions), one request per verdict, cached by content hash.
+questions), one request per verdict, cached by content hash. The cache keeps
+Jev's answers; the verdict is recomposed from them on every read, so a fix to
+composition reaches links that were already shared.
 
 ### `untrusted_input` is not a veto
 
