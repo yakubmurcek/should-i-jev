@@ -23,11 +23,12 @@
 
 ## It is willing to say no
 
-A recommender that always recommends Jev is worthless to a developer. "Just
-write code" is a real answer here, and the most common one.
+A recommender that always recommends Jev is worthless to a developer. **"Don't
+use Jev."** is a real answer here, stamped in red, orange or pink, with what to
+reach for instead: plain code, an LLM, or a model trained on your labels.
 
 <p align="center">
-  <img src="docs/screenshots/03-says-no.png" alt="The same tool answering 'Just write code' for a country-code to currency lookup" width="820" />
+  <img src="docs/screenshots/03-says-no.png" alt="The same tool answering 'Don't use Jev. Use an LLM.' for turning blog posts into tweet drafts" width="820" />
 </p>
 
 TypeSafe publishes what Jev is good at, and — on a page absent from `llms.txt` —
@@ -96,7 +97,7 @@ asked, and every answer returned:
 Shared links carry a rendered card with the real judgments on it:
 
 <p align="center">
-  <img src="docs/screenshots/04-share-card.png" alt="The generated share card for a 'Just write code' verdict" width="640" />
+  <img src="docs/screenshots/04-share-card.png" alt="The generated share card for a 'Don't use Jev. Just write code.' verdict on a disposable-email check" width="640" />
 </p>
 
 ## Layout
@@ -110,7 +111,7 @@ Shared links carry a rendered card with the real judgments on it:
 | `lib/jev/client.ts` | one request, retry on 429/529/5xx, terminal on 401/422 |
 | `app/api/verdict/route.ts` | per-IP limit, global daily cap, length cap, cache, compose |
 | `components/Studio.tsx` | the one-box surface: describe, submit, watch the judgments resolve |
-| `components/VerdictBanner.tsx` | the verdict headline and its gist |
+| `components/VerdictBanner.tsx` | the verdict stamp: "Jev fits", or "Don't use Jev." and what to use instead |
 | `components/JudgmentGrid.tsx` | all nineteen answers, grouped |
 | `components/VerdictDetails.tsx` | deciding judgments, assumptions, what would change it |
 | `components/og.tsx` | the share card, rendered to PNG by Satori |
@@ -124,7 +125,7 @@ The composition layer is deterministic given a set of answers, and that boundary
 is the test strategy.
 
 ```bash
-npm test          # offline: 27 golden fixtures + card rendering. Free, no key.
+npm test          # offline: 28 golden fixtures + card rendering. Free, no key.
 npm run test:live # one real request, contract only. Needs TYPESAFE_API_KEY.
 ```
 
