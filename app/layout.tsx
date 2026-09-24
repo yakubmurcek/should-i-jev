@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import Beacon from "@/components/Beacon";
 import { OG_BASE, SITE_NAME, THEME_COLOR, TWITTER_BASE } from "@/lib/site";
 
 const sans = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body className="min-h-[100dvh] font-sans antialiased">
         {children}
+        <Beacon />
       </body>
     </html>
   );

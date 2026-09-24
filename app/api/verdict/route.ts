@@ -5,13 +5,9 @@ import { MAX_DESCRIPTION_CHARS, MIN_DESCRIPTION_CHARS, buildState } from "@/lib/
 import { MissingAnswerError, composeVerdict } from "@/lib/compose";
 import { RATE_LIMIT, checkDailyCap, checkRateLimit, getVerdict, putVerdict, verdictId } from "@/lib/store";
 import type { VerdictRecord } from "@/lib/verdict";
+import { clientIp, track, type StatEvent } from "@/lib/stats";
 
 export const runtime = "nodejs";
-
-function clientIp(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  return fwd?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
-}
 
 type Code = "too_short" | "too_long" | "busy" | "unconfigured" | "upstream" | "rate_limited";
 
@@ -25,6 +21,20 @@ function fail(status: number, code: Code, error: string, detail?: string) {
 }
 
 export async function POST(req: Request) {
+  const res = await judge(req);
+  const event: StatEvent | null =
+    res.status === 200 ? ((await res.clone().json()).cached ? "cached" : "new")
+    : res.status === 429 ? "limited"
+    : res.status >= 500 ? "error"
+    : null; // 4xx input errors are the visitor's typing, not usage
+  if (event) {
+    const ip = clientIp(req);
+    after(() => track(event, ip));
+  }
+  return res;
+}
+
+async function judge(req: Request) {
   let description: unknown;
   try {
     ({ description } = (await req.json()) as { description?: unknown });
