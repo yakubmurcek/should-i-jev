@@ -1,6 +1,6 @@
 import type { VerdictKind, VerdictRecord } from "@/lib/verdict";
 import type { Answer } from "@/lib/jev/types";
-import { VERDICT_GIST } from "@/components/verdict-meta";
+import { STAMP } from "@/components/verdict-meta";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
@@ -124,7 +124,7 @@ function headlineSize(h: string): number {
  */
 export function VerdictCardImage({ record }: { record: VerdictRecord }) {
   const color = OG_COLOR[record.verdict.kind];
-  const headline = record.verdict.headline;
+  const { headline, sub } = STAMP[record.verdict.kind];
 
   return (
     <div
@@ -183,7 +183,7 @@ export function VerdictCardImage({ record }: { record: VerdictRecord }) {
               {headline}
             </div>
             <div style={{ display: "flex", fontSize: 30, fontWeight: 800, marginTop: 6 }}>
-              {VERDICT_GIST[record.verdict.kind]}
+              {sub}
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, width: 300, flexShrink: 0 }}>

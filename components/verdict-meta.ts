@@ -1,4 +1,4 @@
-import type { VerdictKind } from "@/lib/verdict";
+import { VERDICT_HEADLINES, type VerdictKind } from "@/lib/verdict";
 
 /** Verdict colour is semantic state, not decoration. One token per outcome. */
 export const VERDICT_COLOR: Record<VerdictKind, string> = {
@@ -28,6 +28,20 @@ export const VERDICT_GIST: Record<VerdictKind, string> = {
   jev_plus_llm: "Jev decides, the LLM writes.",
   classical_ml: "Train on your labels instead.",
   not_enough_to_judge: "Tell me a little more and I will rule.",
+};
+
+/**
+ * What the verdict stamp says in big type, and the line under it. When the answer is
+ * "not Jev", the stamp leads with the refusal and the alternative moves to the subline:
+ * a tool that says no to itself is the part people share.
+ */
+export const STAMP: Record<VerdictKind, { headline: string; sub: string }> = {
+  jev_fits: { headline: VERDICT_HEADLINES.jev_fits, sub: VERDICT_GIST.jev_fits },
+  jev_plus_llm: { headline: VERDICT_HEADLINES.jev_plus_llm, sub: VERDICT_GIST.jev_plus_llm },
+  not_enough_to_judge: { headline: VERDICT_HEADLINES.not_enough_to_judge, sub: VERDICT_GIST.not_enough_to_judge },
+  just_write_code: { headline: "Don't use Jev.", sub: "Just write code. No model needed." },
+  use_an_llm: { headline: "Don't use Jev.", sub: "Use an LLM. This wants a generative model." },
+  classical_ml: { headline: "Don't use Jev.", sub: "Use classical ML. Train on your labels." },
 };
 
 /** Short tile labels for the judgment grid. Long enough to mean something. */
