@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { JevError, MODEL, askJev } from "@/lib/jev/client";
 import { QUESTIONS, QUESTION_IDS } from "@/lib/questions";
 import { MAX_DESCRIPTION_CHARS, MIN_DESCRIPTION_CHARS, buildState } from "@/lib/state";
@@ -136,6 +136,24 @@ export async function POST(req: Request) {
   };
 
   await putVerdict(record);
+  after(() => warmShareImages(new URL(`/v/${record.id}`, req.url)));
 
   return NextResponse.json({ ...record, cached: false, remaining: rate.remaining });
+}
+
+/**
+ * Render a new verdict's share images once, right away. X fetches a card image a single
+ * time and caches the outcome per image URL: a slow cold render there leaves the link
+ * with a text-only card for good. This way its first fetch is a CDN hit.
+ */
+async function warmShareImages(page: URL) {
+  try {
+    const html = await (await fetch(page, { headers: { "user-agent": "Twitterbot/1.0" } })).text();
+    const urls = [...html.matchAll(/<meta (?:property|name)="(?:og|twitter):image" content="([^"]+)"/g)].map((m) =>
+      m[1].replace(/&amp;/g, "&"),
+    );
+    await Promise.all(urls.map((u) => fetch(u).then((r) => r.arrayBuffer())));
+  } catch (err) {
+    console.warn("share image warm-up failed", err);
+  }
 }
