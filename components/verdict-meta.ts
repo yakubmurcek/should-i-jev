@@ -108,24 +108,28 @@ export const BLOCKING = new Set([
 
 export const EXAMPLES: { label: string; text: string }[] = [
   {
-    label: "Route support email",
-    text: "Every inbound support email has to land in one of nine queues (billing, bug, refund, account access, sales, partnership, abuse, press, other) based on what the customer is actually asking for.",
+    label: "Label GitHub issues",
+    text: "Every new GitHub issue on my repo gets one label from its title and body: bug, feature request, question, or support, so I only read the bugs first.",
   },
   {
-    label: "Country to currency",
-    text: "Given a two-letter country code on the checkout form, return the currency we bill that country in.",
+    label: "Work or personal email",
+    text: "On signup, mark the email as personal if its domain is a free provider like gmail.com, outlook.com or icloud.com, and as work otherwise, so I only do sales outreach to companies.",
   },
   {
-    label: "Write release notes",
-    text: "Turn each merged pull request's title and diff summary into a paragraph of release notes written for end users.",
+    label: "Sort cancel reasons",
+    text: "When someone cancels, they type why in a free-text box. Sort each answer into too expensive, missing a feature, switched to a competitor, stopped using it, or too buggy, so I know what to fix first.",
   },
   {
-    label: "Moderate listings",
-    text: "Flagged marketplace listings need a severity level of cosmetic, misleading, prohibited, or illegal, assigned from the listing title and body so moderators work the worst first.",
+    label: "Changelog to tweet",
+    text: "Turn a list of merged pull request titles into one tweet announcing what we shipped.",
   },
   {
-    label: "Something vague",
-    text: "We run a logistics business and we think AI could help us somewhere in the operations side of things.",
+    label: "Trial ending email",
+    text: "Send the user a reminder email three days before their free trial ends.",
+  },
+  {
+    label: "Add AI to my SaaS",
+    text: "I want to add AI to my SaaS so it feels smarter and people stop churning.",
   },
 ];
 
