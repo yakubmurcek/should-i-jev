@@ -10,3 +10,4 @@ tests/recorded-answers.json
 
 # Playwright MCP scratch output
 .playwright-mcp
+*.bundle

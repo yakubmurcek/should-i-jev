@@ -7,7 +7,16 @@ import { read } from "@/components/JudgmentGrid";
 import { TILE_LABEL, VERDICT_COLOR, VERDICT_GIST } from "@/components/verdict-meta";
 
 /** The answer, readable in about two seconds. Everything else is below it. */
-export default function VerdictBanner({ verdict, answers = {} }: { verdict: Verdict; answers?: Record<string, Answer> }) {
+export default function VerdictBanner({
+  verdict,
+  answers = {},
+  as: Heading = "h2",
+}: {
+  verdict: Verdict;
+  answers?: Record<string, Answer>;
+  /** h1 on a verdict's own page, where the verdict is the page's topic. */
+  as?: "h1" | "h2";
+}) {
   const reduce = useReducedMotion();
   const color = VERDICT_COLOR[verdict.kind];
   // The two or three answers that moved it most, so "why" is visible without
@@ -26,9 +35,9 @@ export default function VerdictBanner({ verdict, answers = {} }: { verdict: Verd
         verdict
       </span>
       <div className="flex flex-col gap-3">
-        <h2 className="text-[3.2rem] font-extrabold leading-[0.9] tracking-[-0.04em] sm:text-8xl">
+        <Heading className="text-[3.2rem] font-extrabold leading-[0.9] tracking-[-0.04em] sm:text-8xl">
           {verdict.headline}
-        </h2>
+        </Heading>
         <p className="max-w-[40ch] text-xl font-bold leading-snug sm:text-2xl">
           {VERDICT_GIST[verdict.kind]}
         </p>

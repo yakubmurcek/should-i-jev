@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { OG_BASE, SITE_NAME, THEME_COLOR, TWITTER_BASE } from "@/lib/site";
 
 const sans = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
@@ -14,16 +15,21 @@ export const metadata: Metadata = {
         ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
         : "http://localhost:3000"),
   ),
-  title: "Should I Jev?",
+  title: SITE_NAME,
+  applicationName: SITE_NAME,
   description:
     "Jev is TypeSafe's typed-judgment model. Describe a feature and find out if it's a Jev job, checked against the list of what Jev is bad at.",
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Should I Jev?",
+    ...OG_BASE,
+    url: "/",
+    title: SITE_NAME,
     description: "Describe a feature and find out if it's a Jev job. It says so when it isn't.",
-    type: "website",
   },
-  twitter: { card: "summary_large_image", title: "Should I Jev?", creator: "@ykbmck" },
+  twitter: { ...TWITTER_BASE, title: SITE_NAME },
 };
+
+export const viewport: Viewport = { themeColor: THEME_COLOR };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
