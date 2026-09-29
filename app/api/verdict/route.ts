@@ -5,7 +5,7 @@ import { MAX_DESCRIPTION_CHARS, MIN_DESCRIPTION_CHARS, buildState } from "@/lib/
 import { MissingAnswerError, composeVerdict } from "@/lib/compose";
 import { RATE_LIMIT, checkDailyCap, checkRateLimit, getVerdict, putVerdict, verdictId } from "@/lib/store";
 import type { VerdictRecord } from "@/lib/verdict";
-import { clientIp, track, type StatEvent } from "@/lib/stats";
+import { clientIp, isOwner, markOwnerVerdict, track, type StatEvent } from "@/lib/stats";
 
 export const runtime = "nodejs";
 
@@ -22,6 +22,11 @@ function fail(status: number, code: Code, error: string, detail?: string) {
 
 export async function POST(req: Request) {
   const res = await judge(req);
+  const mine = isOwner(req);
+  if (mine && res.status === 200) {
+    const { id } = (await res.clone().json()) as { id: string };
+    after(() => markOwnerVerdict(id));
+  }
   const event: StatEvent | null =
     res.status === 200 ? ((await res.clone().json()).cached ? "cached" : "new")
     : res.status === 429 ? "limited"
@@ -29,7 +34,7 @@ export async function POST(req: Request) {
     : null; // 4xx input errors are the visitor's typing, not usage
   if (event) {
     const ip = clientIp(req);
-    after(() => track(event, ip));
+    after(() => track(event, ip, mine));
   }
   return res;
 }
