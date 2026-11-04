@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
-import { OWNER_COOKIE, ownerToken, readStats } from "@/lib/stats";
+import { COUNTERS_SINCE, OWNER_COOKIE, daysSince, ownerToken, readStats } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Stats", robots: { index: false, follow: false } };
@@ -19,6 +19,13 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const others = stats.recent.filter((r) => !r.mine);
   const mineCount = stats.recent.length - others.length;
   const shown = includeMine ? stats.recent : others;
+  const lastVisit = stats.days.find((d) => (d.counts.view ?? 0) > 0)?.day;
+  const who = includeMine ? "visit" : "stranger visit";
+  const lastVisitText = !lastVisit
+    ? `No ${who}s in the last 30 days.`
+    : daysSince(lastVisit) === 0
+      ? `Last ${who}: today.`
+      : `Last ${who}: ${lastVisit}, ${daysSince(lastVisit)} day${daysSince(lastVisit) === 1 ? "" : "s"} ago.`;
   const toggleHref = `/stats?key=${encodeURIComponent(key)}${includeMine ? "" : "&mine=1"}`;
 
   const tiles: [string, number | undefined][] = [
@@ -34,8 +41,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   return (
     <main className="mx-auto max-w-4xl space-y-8 px-4 py-8 font-mono text-sm">
       <h1 className="font-sans text-2xl font-bold">Usage</h1>
+      <p className="text-base font-bold">{lastVisitText}</p>
       <p className="opacity-60">
-        Counters started {stats.days.at(-1)?.day ?? "today"}. Ideas below go back 30 days (verdict cache lifetime).
+        Totals are all time, since counters went live on {COUNTERS_SINCE}. The table and the ideas cover the last 30
+        days (the verdict cache lifetime). Only the live site counts: previews and this page are not visits.
       </p>
       <a
         href={toggleHref}
@@ -73,7 +82,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       </section>
 
       <section className="overflow-x-auto">
-        <h2 className="mb-2 font-sans text-lg font-bold">By day (UTC)</h2>
+        <h2 className="mb-2 font-sans text-lg font-bold">By day, last 30 days (UTC)</h2>
         <table className="w-full text-left">
           <thead className="opacity-60">
             <tr><th>day</th><th>tried</th><th>visitors</th><th>views</th><th>new</th><th>cached</th><th>limited</th><th>errors</th></tr>
@@ -90,9 +99,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       </section>
 
       <section>
-        <h2 className="mb-2 font-sans text-lg font-bold">What people asked</h2>
+        <h2 className="mb-2 font-sans text-lg font-bold">What people asked, last 30 days</h2>
         {!includeMine && <p className="mb-3 opacity-60">{mineCount} of yours hidden.</p>}
-        {shown.length === 0 && <p>Nobody else yet.</p>}
+        {shown.length === 0 && <p>Nobody else in the last 30 days.</p>}
         <ul className="space-y-3">
           {shown.map((r) => (
             <li key={r.id}>
