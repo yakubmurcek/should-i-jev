@@ -30,5 +30,6 @@ describe("countsAsVisit", () => {
     expect(countsAsVisit("/")).toBe(true);
     expect(countsAsVisit("/v/abc123")).toBe(true);
     expect(countsAsVisit(null)).toBe(true);
+    expect(countsAsVisit("/statsfoo")).toBe(true);
   });
 });

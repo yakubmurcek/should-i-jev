@@ -44,7 +44,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       <p className="text-base font-bold">{lastVisitText}</p>
       <p className="opacity-60">
         Totals are all time, since counters went live on {COUNTERS_SINCE}. The table and the ideas cover the last 30
-        days (the verdict cache lifetime). Only the live site counts: previews and this page are not visits.
+        days (the verdict cache lifetime). Since 2026-11-04 only the live site counts: previews and this page are no longer visits (older totals include some).
       </p>
       <a
         href={toggleHref}

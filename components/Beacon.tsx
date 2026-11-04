@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 /** The private stats page is the owner reading numbers, not a visit. */
-export const countsAsVisit = (path: string | null) => !path?.startsWith("/stats");
+export const countsAsVisit = (path: string | null) => !(path === "/stats" || path?.startsWith("/stats/"));
 
 /** One page view per load, counted server-side. No cookies, no third party. */
 export default function Beacon() {
