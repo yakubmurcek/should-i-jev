@@ -17,6 +17,23 @@ export const STAT_EVENTS: StatEvent[] = ["view", "new", "cached", "limited", "er
 
 const day = () => new Date().toISOString().slice(0, 10);
 
+/** The day the counters went live in production (PR #21). Nothing before it was recorded. */
+export const COUNTERS_SINCE = "2026-09-24";
+
+/**
+ * Only the live site counts. Previews share the production KV, and the owner
+ * cookie is per-domain, so every preview visit used to land in the stats as a
+ * stranger. Local `next dev` would do the same with pulled env vars.
+ */
+export function countsHere(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.VERCEL_ENV ? env.VERCEL_ENV === "production" : env.NODE_ENV === "production";
+}
+
+/** Whole days between a YYYY-MM-DD day and now, for "last visit 16 days ago". */
+export function daysSince(d: string, now = new Date()): number {
+  return Math.floor((Date.parse(now.toISOString().slice(0, 10)) - Date.parse(d)) / 86_400_000);
+}
+
 // Only a hash of the address is kept; it is enough to count distinct visitors.
 const visitor = (ip: string) => createHash("sha256").update(`should-i-jev:${ip}`).digest("hex").slice(0, 16);
 
@@ -29,7 +46,7 @@ const prefix = (mine: boolean) => (mine ? "stats:mine:" : "stats:");
 /** Never throws: a counter must not take a verdict down with it. */
 export async function track(event: StatEvent, ip: string, mine = false): Promise<void> {
   const kv = client();
-  if (!kv) return;
+  if (!kv || !countsHere()) return;
   const d = day();
   const v = visitor(ip);
   const k = prefix(mine);
